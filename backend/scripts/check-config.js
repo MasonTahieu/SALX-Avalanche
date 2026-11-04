@@ -12,7 +12,10 @@ const required = [
 ];
 
 const missing = required.filter((key) => !process.env[key]);
-if (!process.env.PINATA_JWT && !(process.env.PINATA_API_KEY && process.env.PINATA_SECRET_API_KEY)) {
+const ipfsProvider = (process.env.IPFS_PROVIDER || (process.env.FILEBASE_ACCESS_KEY ? 'filebase' : 'pinata')).trim().toLowerCase();
+if (ipfsProvider === 'filebase') {
+  missing.push(...['FILEBASE_ACCESS_KEY', 'FILEBASE_SECRET_KEY', 'FILEBASE_BUCKET'].filter((key) => !process.env[key]));
+} else if (!process.env.PINATA_JWT && !(process.env.PINATA_API_KEY && process.env.PINATA_SECRET_API_KEY)) {
   missing.push('PINATA_JWT hoặc PINATA_API_KEY + PINATA_SECRET_API_KEY');
 }
 

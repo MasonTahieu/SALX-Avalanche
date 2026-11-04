@@ -41,7 +41,7 @@ Smart contracts  ◀── nguồn sự thật duy nhất
         │ emit events
         ▼
 Backend indexer (Node.js) ──▶ MongoDB (read-model) + Redis (cache)
-        │ REST API                    IPFS (Pinata): metadata, ảnh, tài liệu MRV
+        │ REST API                    IPFS (Filebase): metadata, ảnh, tài liệu MRV
         ▼
 Frontend (React + Vite)
 ```
@@ -60,7 +60,7 @@ Các cơ chế an toàn: `ReentrancyGuard`, `Pausable`, khoá vĩnh viễn đị
 
 ### Backend (`backend/`)
 
-Node.js + Express, MongoDB (replica set), Redis, Pinata IPFS, ethers.js. Gồm:
+Node.js + Express, MongoDB (replica set), Redis, IPFS qua Filebase (hoặc Pinata), ethers.js. Gồm:
 - **Indexer** (`services/blockchainListener.js`) đồng bộ toàn bộ event về MongoDB, có retry và theo dõi độ trễ block.
 - **REST API**: `/api/projects`, `/api/listings`, `/api/certificates`, `/api/fees`, `/api/transactions`, `/api/leaderboard`, `/api/upload/ipfs`, `/api/health`, `/api/admin/blockchain/*`.
 - Tự sinh ảnh chứng chỉ (SVG → PNG) và metadata chứng chỉ.
@@ -92,7 +92,7 @@ React 19 + TypeScript + Vite + Tailwind CSS 4, ethers.js, hỗ trợ song ngữ 
 
 ## Chạy dự án
 
-Yêu cầu: Node.js 22+ (Hardhat 3), Docker (cho MongoDB và Redis), ví Core hoặc MetaMask có AVAX testnet, tài khoản Pinata.
+Yêu cầu: Node.js 22+ (Hardhat 3), Docker (cho MongoDB và Redis), ví Core hoặc MetaMask có AVAX testnet, tài khoản Filebase (gói Free, không cần thẻ).
 
 Lấy AVAX testnet miễn phí tại [faucet của UniHack](https://team1vn.xyz/faucet.html) hoặc [Core faucet](https://core.app/tools/testnet-faucet).
 
@@ -114,7 +114,7 @@ npm run export:abis      # xuất ABI cho backend và frontend
 
 ```bash
 cd backend
-cp .env.example .env     # điền địa chỉ contract, block deploy, Pinata và các khoá quản trị
+cp .env.example .env     # điền địa chỉ contract, block deploy, Filebase và các khoá quản trị
 ```
 
 ```bash

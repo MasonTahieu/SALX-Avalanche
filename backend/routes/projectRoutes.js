@@ -94,7 +94,7 @@ router.post('/metadata', async (req, res) => {
   } catch (error) {
     console.error('❌ Lỗi tạo project metadata:', error.response?.data || error.message);
 
-    if (error.response || /pinata/i.test(error.message || '')) {
+    if (error.response || error.$metadata || /pinata|filebase|ipfs/i.test(error.message || '')) {
       return res.status(502).json({
         error: 'Không thể pin project metadata lên IPFS',
         details: error.response?.data || error.message,

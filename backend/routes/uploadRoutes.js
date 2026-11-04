@@ -27,7 +27,7 @@ router.post('/ipfs', upload.single('document'), async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Lỗi Pinata:', error.response?.data || error.message);
+        console.error('Lỗi upload IPFS:', error.response?.data || error.message);
         res.status(500).json({ error: 'Lỗi hệ thống khi tải file lên mạng lưới' });
     }
 });
