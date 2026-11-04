@@ -86,7 +86,15 @@ React 19 + TypeScript + Vite + Tailwind CSS 4, ethers.js, hỗ trợ song ngữ 
 - Mạng: **Avalanche Fuji C-Chain testnet** (chainId 43113). Phí gas và giá niêm yết tính bằng AVAX.
 - Explorer: [Snowtrace testnet](https://testnet.snowtrace.io).
 - Ví hỗ trợ: Core Wallet (ví chính thức của Avalanche), MetaMask, Coin98. Ví sẽ được tự động chuyển sang Fuji khi kết nối.
-- Địa chỉ contract trên Fuji: *chưa deploy, sẽ cập nhật sau khi chạy `npm run deploy:fuji`.*
+- Contract đã deploy trên Fuji:
+
+  | Contract | Địa chỉ | Block deploy |
+  |---|---|---|
+  | `SALMarketplace` | [`0xBb1d739d98dAe76DD1E95e4A978Fd1E4b525ABa4`](https://testnet.snowtrace.io/address/0xBb1d739d98dAe76DD1E95e4A978Fd1E4b525ABa4) | 60494928 |
+  | `SAL1155` | [`0xb525976C24285B3D87033FD3A3E74deDdF6878f7`](https://testnet.snowtrace.io/address/0xb525976C24285B3D87033FD3A3E74deDdF6878f7) | 60494921 |
+  | `GreenCertificateSBT` | [`0xb6093FBE46BA1C0222F0D24D829EB7f310d314c7`](https://testnet.snowtrace.io/address/0xb6093FBE46BA1C0222F0D24D829EB7f310d314c7) | 60494919 |
+
+  Owner và metadata signer: [`0x9A19b5050DbbAabd856F1d81972a240FDc8d5bF5`](https://testnet.snowtrace.io/address/0x9A19b5050DbbAabd856F1d81972a240FDc8d5bF5). Cả hai token đã khoá địa chỉ marketplace (`lockMarketplace`).
 - Frontend được cấu hình deploy trên Vercel.
 - Có test: Hardhat cho contract, Vitest cho các hook frontend, script kiểm thử cho backend.
 
