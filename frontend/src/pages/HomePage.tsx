@@ -172,7 +172,7 @@ export function HomePage() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 18, borderTop: '1px solid var(--bd-soft)', paddingTop: 15 }}>
                 <MetaItem label="TOKEN" value="SAL" />
                 <MetaItem label="PROVENANCE" value="VERIFIED / PUBLIC" valueColor="var(--org)" />
-                <MetaItem label="SETTLEMENT" value="SEPOLIA" />
+                <MetaItem label="SETTLEMENT" value="AVALANCHE FUJI" />
               </div>
             </div>
           </div>
@@ -292,7 +292,7 @@ export function HomePage() {
 
       {/* page footer */}
       <div style={{ borderTop: '1px solid var(--bd-soft)', fontFamily: MONO, fontSize: 7, letterSpacing: '.13em', textTransform: 'uppercase', padding: '20px 34px 28px', textAlign: 'center', color: 'var(--faint)' }}>
-        © 2026 SALX | SAOLA CARBON MARKETPLACE. POWERED BY ETHEREUM.
+        © 2026 SALX | SAOLA CARBON MARKETPLACE. POWERED BY AVALANCHE.
       </div>
 
     </div>

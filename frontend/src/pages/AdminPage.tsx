@@ -569,7 +569,7 @@ export function AdminPage() {
       </div>
 
       <div style={{ borderTop: `1px solid ${BD}`, fontFamily: MONO, fontSize: 7, letterSpacing: '.13em', textTransform: 'uppercase', color: PAGE_MUT, padding: '20px 34px', textAlign: 'center' }}>
-        © 2026 SALX | SAOLA CARBON MARKETPLACE. POWERED BY ETHEREUM.
+        © 2026 SALX | SAOLA CARBON MARKETPLACE. POWERED BY AVALANCHE.
       </div>
     </div>
   );

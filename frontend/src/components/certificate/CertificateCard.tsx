@@ -208,7 +208,7 @@ export function CertificateCard({ certificate, project }: { certificate: Certifi
         <p style={{ fontFamily: INTER, fontSize: 11, fontWeight: 400, lineHeight: 1.75, color: 'var(--mut)', margin: '0 0 14px' }}>
           This certificate guarantees the permanent, on-chain retirement of {formatNumber(co2Kg)} kg CO₂ equivalent
           ({tonnes} tonnes). The carbon footprint has been offset using credits registered in the SALX marketplace.
-          Verification is permanently recorded on the Ethereum blockchain.
+          Verification is permanently recorded on the Avalanche blockchain.
         </p>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {certificate.explorerURL && (

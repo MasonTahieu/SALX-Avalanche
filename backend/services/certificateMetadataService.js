@@ -206,7 +206,7 @@ const buildCertificateSvg = ({ sources, ownerAddress, retiredTokenAmount, retire
   <!-- FOOTER (856–1000) -->
   <line x1="0" y1="${FOOTER_Y}" x2="1000" y2="${FOOTER_Y}" stroke="#1d3026" stroke-width="0.5"/>
   <text x="36" y="${FOOTER_Y + 38}" font-family="Arial,sans-serif" font-size="11" fill="#264035">This certificate guarantees the permanent, on-chain retirement of carbon credits registered in the SALX marketplace.</text>
-  <text x="36" y="${FOOTER_Y + 56}" font-family="Arial,sans-serif" font-size="11" fill="#264035">Verification is permanently recorded on the Ethereum blockchain.</text>
+  <text x="36" y="${FOOTER_Y + 56}" font-family="Arial,sans-serif" font-size="11" fill="#264035">Verification is permanently recorded on the Avalanche blockchain.</text>
   <text x="964" y="${FOOTER_Y + 80}" font-family="Arial,sans-serif" font-size="14" font-weight="700" fill="#2ee68a" text-anchor="end">salx.app</text>
 </svg>`;
 };

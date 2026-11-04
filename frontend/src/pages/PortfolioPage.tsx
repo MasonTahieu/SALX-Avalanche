@@ -374,7 +374,7 @@ export function PortfolioPage() {
       </div>
 
       <div style={{ borderTop: '1px solid var(--bd-soft)', fontFamily: MONO, fontSize: 7, letterSpacing: '.13em', textTransform: 'uppercase', color: 'var(--faint)', padding: '20px 34px', textAlign: 'center' }}>
-        © 2026 SALX | SAOLA CARBON MARKETPLACE. POWERED BY ETHEREUM.
+        © 2026 SALX | SAOLA CARBON MARKETPLACE. POWERED BY AVALANCHE.
       </div>
     </div>
   );
