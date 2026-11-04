@@ -17,7 +17,7 @@ const { validateProjectMetadataAgainstSubmission } = require('./projectMetadataS
 const ZERO_ADDRESS =
   '0x0000000000000000000000000000000000000000';
 
-const DEFAULT_CHAIN_ID = 11155111;
+const DEFAULT_CHAIN_ID = 43113;
 
 let provider;
 let marketplaceContract;

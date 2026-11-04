@@ -3,6 +3,8 @@ import { useWallet } from '../../contexts/WalletContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { shortAddress } from '../../lib/format';
 import { networkById } from '../../config/networks';
+import { env } from '../../config/env';
+import { walletLabel } from '../../services/blockchain';
 
 export function AccountMenu() {
   const wallet = useWallet();
@@ -10,7 +12,7 @@ export function AccountMenu() {
   const [copied, setCopied] = useState(false);
   const network = networkById(wallet.chainId);
   const displayBalance = wallet.nativeBalance ? Number(wallet.nativeBalance).toFixed(4) : '—';
-  const walletName = wallet.walletKind === 'coin98' ? 'Coin98 Wallet' : 'MetaMask';
+  const walletName = walletLabel(wallet.walletKind);
 
   const copyAddress = async () => {
     if (!wallet.address) return;
@@ -28,9 +30,9 @@ export function AccountMenu() {
     <div className="flex flex-col items-center px-5 pt-5">
       <div className="sal-account-avatar" aria-hidden="true">♟</div>
       <div className="mt-3 font-black">{shortAddress(wallet.address, 4, 4)}</div>
-      <div className="mt-1 text-sm text-[var(--sal-muted)]">{displayBalance} {network?.symbol || 'ETH'}</div>
+      <div className="mt-1 text-sm text-[var(--sal-muted)]">{displayBalance} {network?.symbol || env.nativeSymbol}</div>
       <div className={`mt-2 rounded-full px-2.5 py-1 text-[10px] font-black ${wallet.connected ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-600'}`}>
-        {wallet.connected ? 'Sepolia ready' : `${network?.name || `Chain ${wallet.chainId ?? '—'}`} · ${walletName}`.replace('$', '')}
+        {wallet.connected ? `${env.chainName} ready` : `${network?.name || `Chain ${wallet.chainId ?? '—'}`} · ${walletName}`.replace('$', '')}
       </div>
     </div>
     <div className="mt-5 grid grid-cols-2 gap-2 p-4">

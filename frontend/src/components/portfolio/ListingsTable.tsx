@@ -1,6 +1,7 @@
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import type { Listing } from '../../types/domain';
+import { env } from '../../config/env';
 
 interface Props {
   listings: Listing[];
@@ -24,7 +25,7 @@ export function ListingsTable({ listings, busy, onCancel, t }: Props) {
               <div className="min-w-0">
                 <div className="font-black">Listing #{l.listingId}</div>
                 <div className="mt-0.5 text-xs text-[var(--sal-muted)]">
-                  Project #{l.projectId} · {l.remainingAmount} / {l.initialAmount} SAL · {l.pricePerUnitETH} ETH/SAL
+                  Project #{l.projectId} · {l.remainingAmount} / {l.initialAmount} SAL · {l.pricePerUnitETH} {env.nativeSymbol}/SAL
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-2">

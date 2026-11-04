@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { shortAddress, formatNumber } from '../../lib/format';
 import type { AccountFinance } from './usePortfolioData';
+import { env } from '../../config/env';
 
 interface Props {
   address: string;
@@ -22,7 +23,7 @@ export function PortfolioHero({ address, totalSAL, certCount, finance, t }: Prop
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatTile label={t('dashboard.totalSal')} value={`${formatNumber(totalSAL)} SAL`} />
         <StatTile label={t('dashboard.totalCarbon')} value={`${formatNumber(totalSAL * 10)} kg`} />
-        <StatTile label={t('dashboard.proceeds')} value={finance ? `${finance.proceedsETH} ETH` : '…'} />
+        <StatTile label={t('dashboard.proceeds')} value={finance ? `${finance.proceedsETH} ${env.nativeSymbol}` : '…'} />
         <StatTile label={t('dashboard.certificates')} value={String(certCount)} />
       </div>
 

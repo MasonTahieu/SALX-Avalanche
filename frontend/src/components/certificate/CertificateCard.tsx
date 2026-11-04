@@ -218,7 +218,7 @@ export function CertificateCard({ certificate, project }: { certificate: Certifi
               rel="noreferrer"
               style={{ fontFamily: INTER, fontSize: 12, fontWeight: 500, color: 'var(--ink)', border: `1px solid ${BD}`, borderRadius: 6, padding: '7px 14px', textDecoration: 'none', background: 'var(--surf2)' }}
             >
-              View on Etherscan ↗
+              View on Snowtrace ↗
             </a>
           )}
           <button

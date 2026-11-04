@@ -1,6 +1,7 @@
 import type { Listing, Project } from '../../types/domain';
 import { projectDisplay } from '../../lib/projectMeta';
 import { useBuyListing } from './useBuyListing';
+import { env } from '../../config/env';
 
 const MONO = "'IBM Plex Mono', 'JetBrains Mono', monospace";
 const SYNE = "'Syne', sans-serif";
@@ -78,7 +79,7 @@ export function MarketDcCard({ listing, project, onChanged }: MarketDcCardProps)
           <div>
             <span style={{ display: 'block', fontFamily: MONO, fontSize: 7, color: 'var(--faint)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 3 }}>UNIT PRICE</span>
             <strong style={{ fontFamily: MONO, fontSize: 9, fontWeight: 500, color: 'var(--g)' }}>
-              {listing.pricePerUnitETH} ETH/SAL
+              {listing.pricePerUnitETH} {env.nativeSymbol}/SAL
             </strong>
           </div>
           {mrvHref && (
@@ -120,7 +121,7 @@ export function MarketDcCard({ listing, project, onChanged }: MarketDcCardProps)
               style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, width: 22, height: 22, borderRadius: 4, border: '1px solid var(--bd)', background: 'var(--surf2)', color: 'var(--ink)', cursor: !disabled && amount < listing.remainingAmount ? 'pointer' : 'not-allowed', opacity: !disabled && amount < listing.remainingAmount ? 1 : 0.35, flexShrink: 0 }}
             >+</button>
             <span style={{ fontFamily: MONO, fontSize: 7, color: 'var(--mut)', marginLeft: 'auto' }}>
-              = {totalEth} ETH
+              = {totalEth} {env.nativeSymbol}
             </span>
           </div>
         )}

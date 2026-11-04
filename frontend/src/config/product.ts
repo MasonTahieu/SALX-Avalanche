@@ -1,7 +1,7 @@
 export const product = {
   name: 'SALX',
   longName: 'SALX Carbon Credit Marketplace',
-  networkLabel: 'Sepolia testnet',
+  networkLabel: 'Avalanche Fuji testnet',
   unit: 'SAL',
   fallbackKgPerSAL: 10,
   fallbackMaxRetirementProjects: 5,

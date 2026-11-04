@@ -6,6 +6,7 @@ import { usePortfolioData } from '../components/portfolio/usePortfolioData';
 import { formatDate } from '../lib/format';
 import type { Certificate } from '../types/domain';
 import { CertificatesPage } from './CertificatesPage';
+import { env } from '../config/env';
 
 const MONO = "'JetBrains Mono', monospace";
 const SYNE = "'Syne', sans-serif";
@@ -161,14 +162,14 @@ export function PortfolioPage() {
             <StatCard
               label="PROCEEDS"
               value={data.finance?.proceedsETH ?? '0.000'}
-              unit="ETH"
+              unit={env.nativeSymbol}
               action="WITHDRAW"
               onAction={data.runWithdrawProceeds}
             />
             <StatCard
               label="FEE REFUND"
               value={data.finance?.refundETH ?? '0.000'}
-              unit="ETH"
+              unit={env.nativeSymbol}
               action="CLAIM"
               onAction={data.runWithdrawRefund}
               actionColor='var(--surf2)'
@@ -263,7 +264,7 @@ export function PortfolioPage() {
                             style={{ width: 80, fontFamily: MONO, fontSize: 11, background: 'var(--surf)', border: '1px solid var(--bd-mid)', borderRadius: 6, padding: '6px 10px', color: 'var(--ink)', outline: 'none' }} />
                         </div>
                         <div>
-                          <div style={{ fontFamily: MONO, fontSize: 7, letterSpacing: '.1em', color: 'var(--mut)', marginBottom: 4 }}>PRICE / SAL (ETH)</div>
+                          <div style={{ fontFamily: MONO, fontSize: 7, letterSpacing: '.1em', color: 'var(--mut)', marginBottom: 4 }}>PRICE / SAL ({env.nativeSymbol})</div>
                           <input type="text" value={data.listPrice} onChange={e => data.setListPrice(e.target.value)}
                             style={{ width: 110, fontFamily: MONO, fontSize: 11, background: 'var(--surf)', border: '1px solid var(--bd-mid)', borderRadius: 6, padding: '6px 10px', color: 'var(--ink)', outline: 'none' }} />
                         </div>
@@ -303,7 +304,7 @@ export function PortfolioPage() {
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontFamily: MONO, fontSize: 11, color: 'var(--ink)' }}>{l.remainingAmount ?? l.tokenAmount} / {l.tokenAmount} SAL</div>
-                    <div style={{ fontFamily: MONO, fontSize: 9, color: 'var(--g)' }}>{l.pricePerToken} ETH / SAL</div>
+                    <div style={{ fontFamily: MONO, fontSize: 9, color: 'var(--g)' }}>{l.pricePerToken} {env.nativeSymbol} / SAL</div>
                   </div>
                   <span style={{ fontFamily: MONO, fontSize: 7, letterSpacing: '.08em', color: 'var(--g)', background: 'rgba(45,201,34,.1)', border: '1px solid rgba(45,201,34,.25)', borderRadius: 4, padding: '3px 8px' }}>ACTIVE</span>
                   <button

@@ -143,7 +143,7 @@ const getBackendMetadataSigner = () => {
 };
 
 const getBlockchainHealth = async () => {
-  const expectedChainId = Number(process.env.CHAIN_ID || 11155111);
+  const expectedChainId = Number(process.env.CHAIN_ID || 43113);
   const runtime = getBlockchainIndexerStatus();
   const backendSigner = getBackendMetadataSigner();
 

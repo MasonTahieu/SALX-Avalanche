@@ -1,6 +1,7 @@
 import type { Listing } from '../../types/domain';
 import { formatNumber } from '../../lib/format';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { env } from '../../config/env';
 
 interface StatTileProps {
   label: string;
@@ -35,7 +36,7 @@ export function MarketplaceHero({ listings, loading }: MarketplaceHeroProps) {
   const uniqueProjects = new Set(listings.map((l) => l.projectId)).size;
 
   const priceRangeLabel = prices.length
-    ? `${minPrice.toFixed(4)}–${maxPrice.toFixed(4)} ETH`
+    ? `${minPrice.toFixed(4)}–${maxPrice.toFixed(4)} ${env.nativeSymbol}`
     : '—';
 
   return (

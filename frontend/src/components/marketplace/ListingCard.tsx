@@ -8,6 +8,7 @@ import { Button } from '../ui/Button';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { product } from '../../config/product';
 import { useBuyListing } from './useBuyListing';
+import { env } from '../../config/env';
 
 const PLATFORM_FEE_PCT = '2%';
 
@@ -104,8 +105,8 @@ export function ListingCard({ listing, project, onChanged }: ListingCardProps) {
           </div>
           <div className="shrink-0 text-right">
             <div className="text-[10px] text-[var(--sal-muted)]">{t('market.pricePerSal')}</div>
-            <div className="text-lg font-black text-[var(--sal-primary)]">{listing.pricePerUnitETH} ETH</div>
-            <div className="text-[10px] text-[var(--sal-muted)]">{tonnePrice.toFixed(4)} ETH/tCO₂e</div>
+            <div className="text-lg font-black text-[var(--sal-primary)]">{listing.pricePerUnitETH} {env.nativeSymbol}</div>
+            <div className="text-[10px] text-[var(--sal-muted)]">{tonnePrice.toFixed(4)} {env.nativeSymbol}/tCO₂e</div>
           </div>
         </div>
 
@@ -164,7 +165,7 @@ export function ListingCard({ listing, project, onChanged }: ListingCardProps) {
                 </div>
                 <div className="pb-2 text-right text-xs text-[var(--sal-muted)]">
                   <div>{formatNumber(salToKg(amount))} kg CO₂e</div>
-                  <b className="text-[var(--sal-text)]">{totalCost.toFixed(6)} ETH</b>
+                  <b className="text-[var(--sal-text)]">{totalCost.toFixed(6)} {env.nativeSymbol}</b>
                 </div>
               </div>
 

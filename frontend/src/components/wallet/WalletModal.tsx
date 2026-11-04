@@ -1,6 +1,7 @@
 import { useWallet } from '../../contexts/WalletContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { env } from '../../config/env';
+import { walletLabel } from '../../services/blockchain';
 import { shortAddress } from '../../lib/format';
 import { Button } from '../ui/Button';
 
@@ -51,7 +52,7 @@ export function WalletModal() {
       <div className="p-5">
         {wallet.address ? <div className="space-y-4">
           <div className="rounded-2xl border border-[var(--sal-border)] bg-[var(--sal-surface-soft)] p-4">
-            <div className="text-xs uppercase tracking-wider text-[var(--sal-muted)]">{wallet.walletKind === 'coin98' ? 'Coin98 Wallet' : 'MetaMask'}</div>
+            <div className="text-xs uppercase tracking-wider text-[var(--sal-muted)]">{walletLabel(wallet.walletKind)}</div>
             <div className="mt-2 font-mono text-lg font-black">{shortAddress(wallet.address, 8, 6)}</div>
             <div className="mt-4 flex items-center justify-between text-sm">
               <span className="text-[var(--sal-muted)]">{t('wallet.network')}</span>
@@ -60,6 +61,13 @@ export function WalletModal() {
           </div>
           <Button className="w-full" variant="secondary" onClick={wallet.disconnect}>{t('common.disconnect')}</Button>
         </div> : <div className="space-y-3">
+          <WalletChoice
+            title={t('wallet.core')}
+            description={t('wallet.browserExtension')}
+            badge="▲"
+            onClick={() => wallet.connect('core')}
+            disabled={wallet.connecting}
+          />
           <WalletChoice
             title={t('wallet.metamask')}
             description={t('wallet.browserExtension')}

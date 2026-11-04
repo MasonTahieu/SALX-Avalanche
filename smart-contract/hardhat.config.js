@@ -36,6 +36,27 @@ export default defineConfig({
   },
 
   networks: {
+    // Avalanche Fuji C-Chain testnet: mạng chính của SALX cho UniHack.
+    fuji: {
+      type: "http",
+      chainId: 43113,
+      url:
+        process.env.FUJI_RPC_URL ||
+        "https://api.avax-test.network/ext/bc/C/rpc",
+      accounts: process.env.DEPLOYER_PRIVATE_KEY
+        ? [process.env.DEPLOYER_PRIVATE_KEY]
+        : [],
+    },
+    avalanche: {
+      type: "http",
+      chainId: 43114,
+      url:
+        process.env.AVALANCHE_RPC_URL ||
+        "https://api.avax.network/ext/bc/C/rpc",
+      accounts: process.env.DEPLOYER_PRIVATE_KEY
+        ? [process.env.DEPLOYER_PRIVATE_KEY]
+        : [],
+    },
     sepolia: {
       type: "http",
       chainId: 11155111,

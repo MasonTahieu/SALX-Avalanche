@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { env } from '../config/env';
 
 function Reveal({ children, delay = 0 }: { children: ReactNode; delay?: number }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -36,7 +37,7 @@ const EDITIONS: EditionCard[] = [
     id: 'SAL-0001',
     title: 'Cần Giờ Mangrove Forest',
     meta: 'ID: 1 | Ho Chi Minh City',
-    price: '0.020 ETH/SAL',
+    price: `0.020 ${env.nativeSymbol}/SAL`,
     badge: 'VCS VERIFIED',
     badgeBg: '#2dc922',
     badgeColor: '#08150e',
@@ -46,7 +47,7 @@ const EDITIONS: EditionCard[] = [
     id: 'SAL-0002',
     title: 'Bạc Liêu Wind Power',
     meta: 'ID: 2 | Bạc Liêu, Vietnam',
-    price: '0.015 ETH/SAL',
+    price: `0.015 ${env.nativeSymbol}/SAL`,
     badge: 'VCS VERIFIED',
     badgeBg: '#2dc922',
     badgeColor: '#08150e',
@@ -56,7 +57,7 @@ const EDITIONS: EditionCard[] = [
     id: 'SAL-0003',
     title: 'Bình Dương Rooftop Solar',
     meta: 'ID: 3 | Bình Dương',
-    price: '0.010 ETH/SAL',
+    price: `0.010 ${env.nativeSymbol}/SAL`,
     badge: 'GOLD STANDARD',
     badgeBg: '#e7c765',
     badgeColor: '#3a2c05',

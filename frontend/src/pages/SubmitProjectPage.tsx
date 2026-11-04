@@ -3,6 +3,7 @@ import { useWallet } from '../contexts/WalletContext';
 import { useDocumentUpload } from '../components/submit/useDocumentUpload';
 import { useProjectSubmit } from '../components/submit/useProjectSubmit';
 import { networkById } from '../config/networks';
+import { env } from '../config/env';
 
 const MONO = "'JetBrains Mono', monospace";
 const SYNE = "'Syne', sans-serif";
@@ -46,9 +47,7 @@ type WizStep = 1 | 2 | 3;
 
 export function SubmitProjectPage() {
   const wallet = useWallet();
-  const networkSymbol = wallet.chainId === 11155111
-    ? 'SepoliaETH'
-    : (networkById(wallet.chainId)?.symbol ?? 'ETH');
+  const networkSymbol = networkById(wallet.chainId)?.symbol ?? env.nativeSymbol;
   const [wizStep, setWizStep] = useState<WizStep>(1);
   const [done, setDone] = useState(false);
   const [dragOver, setDragOver] = useState(false);

@@ -265,7 +265,7 @@ const createCertificateMetadata = async ({
 
   const basket = normalizeRetirementBasket({ projectIds, salAmounts, amounts, projectId, amount });
   const normalizedOwner = ownerAddress.toLowerCase();
-  const expectedChainId = Number(process.env.CHAIN_ID || 11155111);
+  const expectedChainId = Number(process.env.CHAIN_ID || 43113);
   const marketplaceAddress = process.env.MARKETPLACE_CONTRACT_ADDRESS?.toLowerCase();
   const salContractAddress = process.env.SAL_CONTRACT_ADDRESS?.toLowerCase();
   const certificateContractAddress = process.env.GREEN_CERTIFICATE_SBT_ADDRESS?.toLowerCase();

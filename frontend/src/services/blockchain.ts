@@ -4,7 +4,13 @@ import marketplaceArtifact from '../contracts/abis/SALMarketplace.json';
 import salArtifact from '../contracts/abis/SAL1155.json';
 import certificateArtifact from '../contracts/abis/GreenCertificateSBT.json';
 
-export type WalletKind = 'metamask' | 'coin98';
+export type WalletKind = 'core' | 'metamask' | 'coin98';
+
+export function walletLabel(kind: WalletKind | null) {
+  if (kind === 'core') return 'Core Wallet';
+  if (kind === 'coin98') return 'Coin98 Wallet';
+  return 'MetaMask';
+}
 
 export interface InjectedEthereum extends Eip1193Provider {
   request(args: { method: string; params?: unknown[] | object }): Promise<any>;
@@ -13,6 +19,7 @@ export interface InjectedEthereum extends Eip1193Provider {
   providers?: InjectedEthereum[];
   isMetaMask?: boolean;
   isCoin98?: boolean;
+  isAvalanche?: boolean;
 }
 
 interface Eip6963Detail {
@@ -24,6 +31,7 @@ declare global {
   interface Window {
     ethereum?: InjectedEthereum;
     coin98?: { provider?: InjectedEthereum };
+    avalanche?: InjectedEthereum;
   }
 }
 
@@ -57,6 +65,18 @@ function legacyProviders(): InjectedEthereum[] {
 export async function getWalletProvider(kind: WalletKind): Promise<InjectedEthereum> {
   const announced = await discoverEip6963Providers();
 
+  if (kind === 'core') {
+    const eip6963 = announced.find(({ info, provider }) => {
+      const label = `${info.name} ${info.rdns}`.toLowerCase();
+      return label.includes('app.core') || info.name.toLowerCase() === 'core' || provider.isAvalanche;
+    });
+    if (eip6963) return eip6963.provider;
+    if (window.avalanche) return window.avalanche;
+    const legacy = legacyProviders().find(provider => provider.isAvalanche);
+    if (legacy) return legacy;
+    throw new Error('Không tìm thấy Core Wallet. Hãy cài Core Extension tại https://core.app.');
+  }
+
   if (kind === 'coin98') {
     const eip6963 = announced.find(({ info, provider }) => {
       const label = `${info.name} ${info.rdns}`.toLowerCase();
@@ -71,10 +91,10 @@ export async function getWalletProvider(kind: WalletKind): Promise<InjectedEther
 
   const eip6963 = announced.find(({ info, provider }) => {
     const label = `${info.name} ${info.rdns}`.toLowerCase();
-    return label.includes('metamask') || provider.isMetaMask;
+    return label.includes('metamask') || (provider.isMetaMask && !provider.isAvalanche && !provider.isCoin98);
   });
   if (eip6963) return eip6963.provider;
-  const legacy = legacyProviders().find(provider => provider.isMetaMask && !provider.isCoin98);
+  const legacy = legacyProviders().find(provider => provider.isMetaMask && !provider.isCoin98 && !provider.isAvalanche);
   if (legacy) return legacy;
   if (window.ethereum?.isMetaMask) return window.ethereum;
   throw new Error('Không tìm thấy MetaMask. Hãy cài MetaMask Extension.');
@@ -113,7 +133,7 @@ export async function ensureTargetChain(provider: InjectedEthereum = ethereum())
       params: [{
         chainId: chainIdHex,
         chainName: env.chainName,
-        nativeCurrency: { name: 'Sepolia Ether', symbol: 'ETH', decimals: 18 },
+        nativeCurrency: { name: 'Avalanche', symbol: env.nativeSymbol, decimals: 18 },
         rpcUrls: [env.rpcUrl],
         blockExplorerUrls: [env.blockExplorerUrl],
       }],

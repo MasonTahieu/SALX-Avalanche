@@ -8,6 +8,7 @@
     "compile": "hardhat compile",
     "clean": "hardhat clean",
     "deploy": "hardhat ignition deploy ignition/modules/CarboX.ts",
+    "deploy:fuji": "hardhat ignition deploy ignition/modules/CarboX.ts --network fuji",
     "export:abis": "node scripts/export-abis.mjs"
   },
   "type": "module",

@@ -17,7 +17,7 @@ const main = async () => {
 
   await mongoose.connect(process.env.MONGODB_URI);
 
-  const chainId = Number(process.env.CHAIN_ID || 11155111);
+  const chainId = Number(process.env.CHAIN_ID || 43113);
   const marketplaceContractAddress = process.env.MARKETPLACE_CONTRACT_ADDRESS.toLowerCase();
 
   const users = await User.find();

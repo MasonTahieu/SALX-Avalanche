@@ -4,6 +4,7 @@ import { useWallet } from '../contexts/WalletContext';
 import type { Project } from '../types/domain';
 import { useRetireFlow } from '../components/retire/useRetireFlow';
 import { CertificateCard } from '../components/certificate/CertificateCard';
+import { env } from '../config/env';
 
 const MONO = "'JetBrains Mono', monospace";
 const SYNE = "'Syne', sans-serif";
@@ -154,7 +155,7 @@ export function RetirePage() {
                   <span style={{ fontSize: 16, color: 'var(--g)', letterSpacing: '-.02em', fontWeight: 700 }}>{flow.totalSAL}</span>{' '}
                   SAL = {(flow.totalSAL * flow.config.kgPerSAL / 1000).toFixed(2)} Tons CO₂e
                 </strong>
-                <div style={{ fontFamily: MONO, fontSize: 7, color: 'var(--mut)', marginTop: 4 }}>Fee: {flow.config.feeETH} ETH</div>
+                <div style={{ fontFamily: MONO, fontSize: 7, color: 'var(--mut)', marginTop: 4 }}>Fee: {flow.config.feeETH} {env.nativeSymbol}</div>
               </div>
             )}
 

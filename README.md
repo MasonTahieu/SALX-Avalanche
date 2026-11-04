@@ -1,4 +1,6 @@
-# SALX: Sàn tín chỉ carbon minh bạch trên blockchain
+# SALX: Sàn tín chỉ carbon minh bạch trên Avalanche
+
+> Phiên bản Avalanche của SALX, tham gia **Team1 Vietnam UniHack 2026**. Mã nguồn gốc chạy trên Ethereum Sepolia được giữ nguyên tại [MasonTahieu/SALX](https://github.com/MasonTahieu/SALX).
 
 SALX (tên nội bộ: CarboX) là một marketplace tín chỉ carbon chạy on-chain. Dự án giảm phát thải (rừng, rừng ngập mặn, điện mặt trời, điện gió...) được cộng đồng validator thẩm định rồi token hoá thành **SAL**. SAL có thể mua bán tự do trên sàn, và khi người dùng "retire" (sử dụng) tín chỉ để bù đắp phát thải, hệ thống cấp một **chứng chỉ xanh Soulbound** không thể chuyển nhượng làm bằng chứng vĩnh viễn.
 
@@ -32,7 +34,7 @@ Người mua ◀──────────── mua SAL trên marketplace �
 ## Kiến trúc
 
 ```
-Ví người dùng (MetaMask / Coin98)
+Ví người dùng (Core / MetaMask / Coin98)
         │ ký giao dịch
         ▼
 Smart contracts  ◀── nguồn sự thật duy nhất
@@ -81,32 +83,39 @@ React 19 + TypeScript + Vite + Tailwind CSS 4, ethers.js, hỗ trợ song ngữ 
 
 ## Trạng thái hiện tại
 
-- Mạng: **Ethereum Sepolia testnet** (chainId 11155111).
-- Địa chỉ contract đã deploy (Sepolia):
-  - `SALMarketplace`: `0xbf292971D5b77090CB4044ac178cCec124Fe1b82`
-  - `SAL1155`: `0xcd0B4B97ff46a0B90fb4F0d53E6eD029FDe13E78`
-  - `GreenCertificateSBT`: `0x7Fd164320b6Fa7Bcd7F5934808A9B1e3822de7f0`
+- Mạng: **Avalanche Fuji C-Chain testnet** (chainId 43113). Phí gas và giá niêm yết tính bằng AVAX.
+- Explorer: [Snowtrace testnet](https://testnet.snowtrace.io).
+- Ví hỗ trợ: Core Wallet (ví chính thức của Avalanche), MetaMask, Coin98. Ví sẽ được tự động chuyển sang Fuji khi kết nối.
+- Địa chỉ contract trên Fuji: *chưa deploy, sẽ cập nhật sau khi chạy `npm run deploy:fuji`.*
 - Frontend được cấu hình deploy trên Vercel.
 - Có test: Hardhat cho contract, Vitest cho các hook frontend, script kiểm thử cho backend.
 
 ## Chạy dự án
 
-Yêu cầu: Node.js 22+ (Hardhat 3), Docker (cho MongoDB và Redis), ví MetaMask hoặc Coin98, tài khoản Pinata.
+Yêu cầu: Node.js 22+ (Hardhat 3), Docker (cho MongoDB và Redis), ví Core hoặc MetaMask có AVAX testnet, tài khoản Pinata.
+
+Lấy AVAX testnet miễn phí tại [faucet của UniHack](https://team1vn.xyz/faucet.html) hoặc [Core faucet](https://core.app/tools/testnet-faucet).
 
 ### 1. Smart contracts
 
 ```bash
 cd smart-contract
+cp .env.example .env     # điền DEPLOYER_PRIVATE_KEY (ví testnet riêng)
 npm install
 npm test                 # chạy test Hardhat
 npm run compile
-npm run deploy -- --network sepolia   # cần SEPOLIA_RPC_URL và SEPOLIA_PRIVATE_KEY trong .env
+npm run deploy:fuji      # deploy 3 contract lên Avalanche Fuji
 npm run export:abis      # xuất ABI cho backend và frontend
 ```
 
+Địa chỉ contract sau khi deploy nằm trong `smart-contract/ignition/deployments/chain-43113/deployed_addresses.json`.
+
 ### 2. Backend
 
-Tạo `backend/.env` với các biến: `RPC_URL`, `CHAIN_ID`, `SAL_CONTRACT_ADDRESS`, `MARKETPLACE_CONTRACT_ADDRESS`, `GREEN_CERTIFICATE_SBT_ADDRESS`, các `*_DEPLOYMENT_BLOCK`, `PINATA_JWT`, `IPFS_GATEWAY_URL`, `ADMIN_SECRET_KEY`, `ADMIN_PRIVATE_KEY`, `METADATA_SIGNER_PRIVATE_KEY`, `VALIDATOR_PRIVATE_KEY`.
+```bash
+cd backend
+cp .env.example .env     # điền địa chỉ contract, block deploy, Pinata và các khoá quản trị
+```
 
 ```bash
 cd backend
@@ -119,7 +128,7 @@ npm run test:backend
 
 ```bash
 cd frontend
-cp .env.example .env     # điền VITE_API_URL, VITE_CHAIN_ID và địa chỉ contract
+cp .env.example .env     # mặc định đã trỏ Fuji, chỉ cần điền VITE_API_URL và địa chỉ contract
 npm install
 npm run dev
 npm test

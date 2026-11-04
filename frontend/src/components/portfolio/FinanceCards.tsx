@@ -1,6 +1,7 @@
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import type { AccountFinance } from './usePortfolioData';
+import { env } from '../../config/env';
 
 interface Props {
   finance: AccountFinance | null;
@@ -16,7 +17,7 @@ export function FinanceCards({ finance, busy, onWithdrawProceeds, onWithdrawRefu
       <FinanceCard
         label={t('dashboard.proceeds')}
         value={finance?.proceedsETH ?? '—'}
-        unit="ETH"
+        unit={env.nativeSymbol}
         hint={t('dashboard.proceedsHint')}
         actionLabel={t('dashboard.withdraw')}
         disabled={busy || !Number(finance?.proceedsETH)}
@@ -25,7 +26,7 @@ export function FinanceCards({ finance, busy, onWithdrawProceeds, onWithdrawRefu
       <FinanceCard
         label={t('dashboard.refund')}
         value={finance?.refundETH ?? '—'}
-        unit="ETH"
+        unit={env.nativeSymbol}
         hint={t('dashboard.refundHint')}
         actionLabel={t('dashboard.withdraw')}
         disabled={busy || !Number(finance?.refundETH)}
@@ -34,7 +35,7 @@ export function FinanceCards({ finance, busy, onWithdrawProceeds, onWithdrawRefu
       <FinanceCard
         label={t('dashboard.mintFee')}
         value={finance?.certificateFeeETH ?? '—'}
-        unit="ETH"
+        unit={env.nativeSymbol}
         hint="Certificate mint fee · contract view"
         readOnly
         warning={finance?.paused}

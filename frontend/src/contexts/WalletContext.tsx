@@ -45,7 +45,7 @@ const SESSION_KEY = 'salx.session';
 
 function savedWalletKind(): WalletKind | null {
   const saved = localStorage.getItem('salx.walletKind');
-  return saved === 'metamask' || saved === 'coin98' ? saved : null;
+  return saved === 'core' || saved === 'metamask' || saved === 'coin98' ? saved : null;
 }
 
 function savedRole(): 'user' | 'validator' {

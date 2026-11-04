@@ -29,7 +29,7 @@ const serializeCertificate = (certificate) => {
     certificateURIHttp: ipfsToHttp(data.certificateURI),
     imageURL: ipfsToHttp(data.imageURI || data.metadata?.image),
     explorerURL: data.txHash
-      ? `https://sepolia.etherscan.io/tx/${data.txHash}`
+      ? `${(process.env.BLOCK_EXPLORER_URL || 'https://testnet.snowtrace.io').replace(/\/$/, '')}/tx/${data.txHash}`
       : null,
   };
 };
@@ -138,7 +138,7 @@ router.get('/token/:tokenId', async (req, res) => {
     }
 
     const certificate = await Certificate.findOne({
-      chainId: Number(process.env.CHAIN_ID || 11155111),
+      chainId: Number(process.env.CHAIN_ID || 43113),
       certificateContractAddress: process.env.GREEN_CERTIFICATE_SBT_ADDRESS?.toLowerCase(),
       certificateTokenId: tokenId,
     });

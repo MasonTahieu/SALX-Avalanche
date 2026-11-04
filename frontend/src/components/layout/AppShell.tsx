@@ -406,13 +406,35 @@ export function AppShell() {
                   </span>
                 </div>
 
+                {/* Core (Avalanche) */}
+                <button
+                  onClick={() => connectWith('core')}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 14,
+                    background: 'var(--surf2)', border: '1px solid var(--bd)',
+                    borderRadius: '10px 10px 0 0',
+                    padding: '14px 16px', cursor: 'pointer', width: '100%', textAlign: 'left',
+                  }}
+                >
+                  <span style={{
+                    width: 34, height: 34, background: '#E84142',
+                    borderRadius: 8, display: 'grid', placeItems: 'center',
+                    fontFamily: SYNE, fontWeight: 800, fontSize: 14, color: '#fff', flexShrink: 0,
+                  }}>▲</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontFamily: SYNE, fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>Core</div>
+                    <div style={{ fontFamily: MONO, fontSize: 9, color: 'var(--mut)', marginTop: 2 }}>Avalanche wallet</div>
+                  </div>
+                  <span style={{ color: 'var(--mut)', fontSize: 12 }}>↗</span>
+                </button>
+
                 {/* MetaMask */}
                 <button
                   onClick={() => connectWith('metamask')}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 14,
-                    background: 'var(--surf2)', border: '1px solid var(--bd)',
-                    borderRadius: '10px 10px 0 0',
+                    background: 'var(--surf2)', border: '1px solid var(--bd)', borderTop: 'none',
+                    borderRadius: 0,
                     padding: '14px 16px', cursor: 'pointer', width: '100%', textAlign: 'left',
                   }}
                 >

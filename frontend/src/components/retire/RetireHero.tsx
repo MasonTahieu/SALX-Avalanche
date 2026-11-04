@@ -1,4 +1,5 @@
 import type { RetireConfig } from './useRetireFlow';
+import { env } from '../../config/env';
 
 interface Props {
   config: RetireConfig;
@@ -17,7 +18,7 @@ export function RetireHero({ config, t }: Props) {
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <StatTile label={t('retire.maxSources')} value={String(config.maxProjects)} />
         <StatTile label="SBT per basket" value="1" />
-        <StatTile label={t('retire.fee')} value={config.feeETH === '—' ? '…' : `${config.feeETH} ETH`} />
+        <StatTile label={t('retire.fee')} value={config.feeETH === '—' ? '…' : `${config.feeETH} ${env.nativeSymbol}`} />
       </div>
 
       <p className="mt-4 text-xs text-white/45">

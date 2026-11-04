@@ -5,7 +5,7 @@ const Listing = require('../Models/Listing');
 const router = express.Router();
 
 const currentScope = () => ({
-  chainId: Number(process.env.CHAIN_ID || 11155111),
+  chainId: Number(process.env.CHAIN_ID || 43113),
   marketplaceContractAddress: String(
     process.env.MARKETPLACE_CONTRACT_ADDRESS || ''
   ).toLowerCase(),

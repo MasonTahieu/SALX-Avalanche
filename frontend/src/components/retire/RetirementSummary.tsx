@@ -3,6 +3,7 @@ import { formatNumber } from '../../lib/format';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
+import { env } from '../../config/env';
 
 export function RetirementSummary({
   selectedCount,
@@ -36,7 +37,7 @@ export function RetirementSummary({
         <div className="flex justify-between gap-4"><span className="text-[var(--sal-muted)]">{t('retire.selectedSources')}</span><b>{selectedCount}</b></div>
         <div className="flex justify-between gap-4"><span className="text-[var(--sal-muted)]">{t('retire.totalSal')}</span><b>{formatNumber(totalSAL)} SAL</b></div>
         <div className="flex justify-between gap-4"><span className="text-[var(--sal-muted)]">{t('retire.carbon')}</span><b className="text-[var(--sal-primary)]">{formatNumber(totalSAL * kgPerSAL)} kg CO₂e</b></div>
-        <div className="flex justify-between gap-4"><span className="text-[var(--sal-muted)]">{t('retire.fee')}</span><b>{feeETH} ETH</b></div>
+        <div className="flex justify-between gap-4"><span className="text-[var(--sal-muted)]">{t('retire.fee')}</span><b>{feeETH} {env.nativeSymbol}</b></div>
       </div>
       <div className="mt-5 rounded-xl border border-[var(--sal-border)] bg-[var(--sal-surface-soft)] p-3 text-xs leading-5 text-[var(--sal-muted)]">
         {t('retire.oneSbtNote')}

@@ -20,7 +20,7 @@ const { fetchJSONFromURI } = require('../services/ipfsService');
 
 
 const currentProjectScope = () => ({
-  chainId: Number(process.env.CHAIN_ID || 11155111),
+  chainId: Number(process.env.CHAIN_ID || 43113),
   marketplaceContractAddress: String(
     process.env.MARKETPLACE_CONTRACT_ADDRESS || ''
   ).toLowerCase(),
