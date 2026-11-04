@@ -240,6 +240,7 @@ router.get('/votes/:onChainProjectId', async (req, res) => {
       approvalVotes: project.approvalVotes || 0,
       rejectionVotes: project.rejectionVotes || 0,
       approvalQuorum: project.approvalQuorum || 0,
+      eligibleValidatorCount: project.eligibleValidatorCount || 0,
       quorumReached: (project.approvalVotes || 0) >= (project.approvalQuorum || 0),
       votes,
     });

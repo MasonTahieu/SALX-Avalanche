@@ -21,7 +21,7 @@ export interface FileEntry {
 
 export interface UseDocumentUploadResult {
   entries: FileEntry[];
-  addFiles: (fileList: FileList | null) => void;
+  addFiles: (fileList: FileList | File[] | null) => void;
   removeFile: (index: number) => void;
   // O(n) sequential upload; returns successfully uploaded docs
   uploadAll: () => Promise<UploadedDocument[]>;
@@ -32,7 +32,7 @@ export interface UseDocumentUploadResult {
 export function useDocumentUpload(): UseDocumentUploadResult {
   const [entries, setEntries] = useState<FileEntry[]>([]);
 
-  const addFiles = (fileList: FileList | null) => {
+  const addFiles = (fileList: FileList | File[] | null) => {
     if (!fileList) return;
     const incoming = Array.from(fileList);
     setEntries(prev => {

@@ -96,6 +96,11 @@ export function PortfolioPage() {
 
   const addr = wallet.address ?? '';
   const shortAddr = addr ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : '';
+  // Listing từ API không kèm tên dự án: tra theo onChainProjectId trong các dự án đã tải.
+  const projectNameById = new Map(
+    [...data.myProjects, ...data.balances.map(b => b.project)]
+      .map(p => [Number(p.onChainProjectId), p.projectName] as const)
+  );
 
   const handleCreateListing = async () => {
     await data.runCreateListing();
@@ -299,12 +304,12 @@ export function PortfolioPage() {
               {data.listings.map(l => (
                 <div key={l.listingId} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', alignItems: 'center', gap: 20, padding: '14px 16px', background: 'var(--surf)', border: '1px solid var(--bd-mid)', borderRadius: 10, marginBottom: 8 }}>
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)' }}>{l.projectName ?? `Project #${l.projectId}`}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)' }}>{projectNameById.get(l.projectId) ?? `Project #${l.projectId}`}</div>
                     <div style={{ fontFamily: MONO, fontSize: 8, color: 'var(--mut)', marginTop: 2 }}>Listing #{l.listingId}</div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontFamily: MONO, fontSize: 11, color: 'var(--ink)' }}>{l.remainingAmount ?? l.tokenAmount} / {l.tokenAmount} SAL</div>
-                    <div style={{ fontFamily: MONO, fontSize: 9, color: 'var(--g)' }}>{l.pricePerToken} {env.nativeSymbol} / SAL</div>
+                    <div style={{ fontFamily: MONO, fontSize: 11, color: 'var(--ink)' }}>{l.remainingAmount} / {l.initialAmount} SAL</div>
+                    <div style={{ fontFamily: MONO, fontSize: 9, color: 'var(--g)' }}>{l.pricePerUnitETH} {env.nativeSymbol} / SAL</div>
                   </div>
                   <span style={{ fontFamily: MONO, fontSize: 7, letterSpacing: '.08em', color: 'var(--g)', background: 'rgba(45,201,34,.1)', border: '1px solid rgba(45,201,34,.25)', borderRadius: 4, padding: '3px 8px' }}>ACTIVE</span>
                   <button

@@ -16,6 +16,7 @@ export interface ProjectFormData {
   monitoringStart: string;
   monitoringEnd: string;
   image: string;
+  externalUrl: string;
 }
 
 export const INITIAL_FORM: ProjectFormData = {
@@ -29,6 +30,7 @@ export const INITIAL_FORM: ProjectFormData = {
   monitoringStart: '',
   monitoringEnd: '',
   image: '',
+  externalUrl: '',
 };
 
 export interface MetadataResult {
@@ -83,6 +85,8 @@ export function useProjectSubmit(): UseProjectSubmitResult {
       else delete payload.monitoringEnd;
       if (form.image) payload.image = form.image;
       else delete payload.image;
+      if (form.externalUrl) payload.externalUrl = form.externalUrl;
+      else delete payload.externalUrl;
       if (!form.carbonStandard) delete payload.carbonStandard;
 
       const resp = await backend.createProjectMetadata(payload);

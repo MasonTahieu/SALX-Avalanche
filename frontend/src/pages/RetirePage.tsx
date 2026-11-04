@@ -19,7 +19,7 @@ function CertPreview({
   totalSAL: number;
   kgPerSAL: number;
   projects: string[];
-  ownerAddress: string;
+  ownerAddress: string | null;
 }) {
   const short = ownerAddress ? `${ownerAddress.slice(0, 6)}…${ownerAddress.slice(-4)}` : '0x…';
   const tons = (totalSAL * kgPerSAL) / 1000;

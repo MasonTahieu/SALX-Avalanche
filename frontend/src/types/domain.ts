@@ -57,6 +57,7 @@ export interface VoteProgress {
   approvalVotes: number;
   rejectionVotes: number;
   approvalQuorum: number;
+  eligibleValidatorCount?: number;
   quorumReached: boolean;
   votes: Array<{
     validatorAddress: string;
