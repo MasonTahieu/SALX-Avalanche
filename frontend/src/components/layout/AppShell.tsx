@@ -1,10 +1,11 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useWallet } from '../../contexts/WalletContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { env } from '../../config/env';
 import { NETWORKS, networkById } from '../../config/networks';
 import type { WalletKind } from '../../services/blockchain';
+import './AppShell.css';
 
 const MONO = "'JetBrains Mono', monospace";
 const SYNE = "'Syne', sans-serif";
@@ -12,6 +13,24 @@ const INTER = "'Inter', sans-serif";
 
 type ModalStep = 'role' | 'wallet';
 type Role = 'user' | 'validator';
+
+type NavItem = { to: string; label: string };
+
+const USER_NAV: NavItem[] = [
+  { to: '/marketplace', label: 'Marketplace' },
+  { to: '/retire',      label: 'Retire' },
+  { to: '/submit',      label: 'Submit' },
+  { to: '/dashboard',   label: 'Dashboard' },
+  { to: '/leaderboard', label: 'Leaderboard' },
+];
+
+const VALIDATOR_NAV: NavItem[] = [
+  { to: '/validator', label: 'Pending Projects' },
+  { to: '/admin',     label: 'Admin' },
+];
+
+// Must match the breakpoint in AppShell.css where the inline nav comes back.
+const DESKTOP_NAV_QUERY = '(min-width: 1024px)';
 
 function networkLabel(chainId: number | undefined): string {
   return networkById(chainId ?? null)?.shortName ?? `Chain ${chainId ?? '?'}`;
@@ -24,13 +43,40 @@ function shortAddr(addr: string): string {
 export function AppShell() {
   const wallet = useWallet();
   const navigate = useNavigate();
+  const location = useLocation();
   const { theme, toggleTheme } = useTheme();
 
   const [modalStep, setModalStep] = useState<ModalStep>('role');
   const [netOpen, setNetOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const netRef = useRef<HTMLDivElement>(null);
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
   const pendingRoleRef = useRef<Role>('user');
   const connectingFromModalRef = useRef(false);
+
+  // Close the mobile menu whenever the route changes (link tap, back button…)
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname, location.search]);
+
+  // Mobile menu: Escape closes it; widening to desktop drops it.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMenuOpen(false);
+        menuBtnRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    const mq = typeof window.matchMedia === 'function' ? window.matchMedia(DESKTOP_NAV_QUERY) : null;
+    const onWide = () => { if (mq?.matches) setMenuOpen(false); };
+    mq?.addEventListener('change', onWide);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      mq?.removeEventListener('change', onWide);
+    };
+  }, [menuOpen]);
 
   // Close network dropdown on outside click
   useEffect(() => {
@@ -75,6 +121,7 @@ export function AppShell() {
   };
 
   const isValidator = wallet.role === 'validator';
+  const navItems = isValidator ? VALIDATOR_NAV : USER_NAV;
   const themeLabel = theme === 'dark' ? 'LIGHT' : 'DARK';
 
   const navLinkStyle = (isActive: boolean): React.CSSProperties => ({
@@ -96,15 +143,8 @@ export function AppShell() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh', background: 'var(--bg)', color: 'var(--ink)' }}>
 
-      {/* ── Header ── */}
-      <header style={{
-        height: 64, flexShrink: 0,
-        display: 'grid', gridTemplateColumns: 'auto 1fr auto',
-        alignItems: 'center', gap: 18, padding: '0 32px',
-        borderBottom: '1px solid rgba(45,201,34,.18)',
-        background: 'var(--hdr)', backdropFilter: 'blur(16px)',
-        position: 'sticky', top: 0, zIndex: 40,
-      }}>
+      {/* ── Header ── (layout + breakpoints in AppShell.css) */}
+      <header className="app-hdr">
 
         {/* Col 1 — Logo */}
         <NavLink to="/" style={{ display: 'flex', alignItems: 'center', lineHeight: 0 }}>
@@ -115,36 +155,28 @@ export function AppShell() {
           />
         </NavLink>
 
-        {/* Col 2 — Nav */}
-        <nav style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 24 }}>
-          {isValidator ? (
-            <>
-              <NavLink to="/validator" style={({ isActive }) => navLinkStyle(isActive)}>
-                Pending Projects
-              </NavLink>
-              <NavLink to="/admin" style={({ isActive }) => navLinkStyle(isActive)}>Admin</NavLink>
-              <span style={{
-                fontFamily: MONO, fontSize: 7, letterSpacing: '.1em', textTransform: 'uppercase',
-                background: 'rgba(231,199,101,.1)', color: '#e7c765',
-                border: '1px solid rgba(231,199,101,.3)', borderRadius: 4, padding: '3px 8px',
-              }}>
-                VALIDATOR
-              </span>
-            </>
-          ) : (
-            <>
-              <NavLink to="/marketplace" style={({ isActive }) => navLinkStyle(isActive)}>Marketplace</NavLink>
-              <NavLink to="/retire"  style={({ isActive }) => navLinkStyle(isActive)}>Retire</NavLink>
-              <NavLink to="/submit" style={({ isActive }) => navLinkStyle(isActive)}>Submit</NavLink>
-              <NavLink to="/dashboard"   style={({ isActive }) => navLinkStyle(isActive)}>Dashboard</NavLink>
-              <NavLink to="/leaderboard" style={({ isActive }) => navLinkStyle(isActive)}>Leaderboard</NavLink>
-            </>
+        {/* Col 2 — Nav (desktop; hidden below 1024px, see the menu panel) */}
+        <nav className="app-hdr-nav" aria-label="Main">
+          {navItems.map(item => (
+            <NavLink key={item.to} to={item.to} style={({ isActive }) => navLinkStyle(isActive)}>
+              {item.label}
+            </NavLink>
+          ))}
+          {isValidator && (
+            <span style={{
+              fontFamily: MONO, fontSize: 7, letterSpacing: '.1em', textTransform: 'uppercase',
+              background: 'rgba(231,199,101,.1)', color: '#e7c765',
+              border: '1px solid rgba(231,199,101,.3)', borderRadius: 4, padding: '3px 8px',
+            }}>
+              VALIDATOR
+            </span>
           )}
         </nav>
 
-        {/* Col 3 — Theme toggle + Network + Wallet */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {/* Col 3 — Theme toggle + Network + Wallet (+ menu button below 1024px) */}
+        <div className="app-hdr-actions">
           <button
+            className="app-hdr-wide-only"
             onClick={toggleTheme}
             style={{
               background: 'none', border: '1px solid var(--bd)',
@@ -158,7 +190,9 @@ export function AppShell() {
           {/* Network selector */}
           <div ref={netRef} style={{ position: 'relative' }}>
             <button
-              onClick={() => setNetOpen(o => !o)}
+              onClick={() => { setMenuOpen(false); setNetOpen(o => !o); }}
+              aria-haspopup="true"
+              aria-expanded={netOpen}
               style={{
                 display: 'flex', alignItems: 'center', gap: 6,
                 fontFamily: MONO, fontSize: 9, letterSpacing: '.1em', fontWeight: 700,
@@ -205,21 +239,22 @@ export function AppShell() {
           {wallet.address ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               {/* Address pill */}
-              <div style={{
+              <div className="app-hdr-pill" title={wallet.address} style={{
                 display: 'flex', alignItems: 'center', gap: 8,
                 fontFamily: MONO, fontSize: 10, fontWeight: 500,
                 background: 'var(--g)', color: 'var(--bg)',
                 padding: '7px 13px', borderRadius: 999,
               }}>
-                <span style={{
+                <span className="app-hdr-pill-dot" style={{
                   width: 6, height: 6, borderRadius: '50%',
                   background: 'rgba(6,17,11,.6)', flexShrink: 0,
                   animation: 'pulse 1.8s infinite',
                 }} />
                 {shortAddr(wallet.address)}
               </div>
-              {/* Disconnect */}
+              {/* Disconnect (moves into the menu panel below 640px) */}
               <button
+                className="app-hdr-wide-only"
                 onClick={() => wallet.disconnect()}
                 title="Disconnect wallet"
                 style={{
@@ -245,8 +280,59 @@ export function AppShell() {
               Connect Wallet
             </button>
           )}
+
+          {/* Menu button — only displayed below 1024px */}
+          <button
+            ref={menuBtnRef}
+            type="button"
+            className="app-hdr-menu-btn"
+            onClick={() => { setNetOpen(false); setMenuOpen(o => !o); }}
+            aria-expanded={menuOpen}
+            aria-controls="app-hdr-menu"
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          >
+            <span className="app-hdr-burger" aria-hidden="true"><span /><span /><span /></span>
+          </button>
         </div>
+
+        {/* Mobile / tablet menu panel */}
+        {menuOpen && (
+          <div id="app-hdr-menu" className="app-hdr-panel">
+            {isValidator && <span className="app-hdr-panel-badge">Validator</span>}
+            <nav className="app-hdr-panel-nav" aria-label="Main menu">
+              {navItems.map(item => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className="app-hdr-panel-link"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+            </nav>
+            {/* Controls that leave the header row below 640px */}
+            <div className="app-hdr-panel-foot">
+              <button type="button" className="app-hdr-chip" onClick={toggleTheme}>
+                {themeLabel} mode
+              </button>
+              {wallet.address && (
+                <button
+                  type="button"
+                  className="app-hdr-chip app-hdr-chip--danger"
+                  onClick={() => { wallet.disconnect(); setMenuOpen(false); }}
+                >
+                  Disconnect
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </header>
+
+      {menuOpen && (
+        <div className="app-hdr-backdrop" aria-hidden="true" onClick={() => setMenuOpen(false)} />
+      )}
 
       {/* ── Page content ── */}
       <main className="sal-shell" style={{ padding: '32px 0', flex: 1 }}>
@@ -271,7 +357,7 @@ export function AppShell() {
             style={{
               position: 'relative', background: 'var(--surf)',
               border: '1px solid rgba(45,201,34,.25)', borderRadius: 16,
-              padding: '28px 24px', width: 360,
+              padding: '28px 24px', width: 360, maxWidth: 'calc(100vw - 24px)',
               animation: 'fadeUp .25s ease',
             }}
           >
