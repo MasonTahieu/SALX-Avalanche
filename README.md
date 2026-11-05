@@ -6,6 +6,8 @@ SALX (tên nội bộ: CarboX) là một marketplace tín chỉ carbon chạy on
 
 > **1 SAL = 10 kg CO2e**
 
+**🌐 Website demo:** [salx-avalanche.vercel.app](https://salx-avalanche.vercel.app) (chạy trên Avalanche Fuji testnet, kết nối ví Core hoặc MetaMask để giao dịch)
+
 ## Vấn đề và giải pháp
 
 | Vấn đề của thị trường carbon truyền thống | Cách SALX giải quyết |
@@ -95,7 +97,7 @@ React 19 + TypeScript + Vite + Tailwind CSS 4, ethers.js, hỗ trợ song ngữ 
   | `GreenCertificateSBT` | [`0xb6093FBE46BA1C0222F0D24D829EB7f310d314c7`](https://testnet.snowtrace.io/address/0xb6093FBE46BA1C0222F0D24D829EB7f310d314c7) | 60494919 |
 
   Owner và metadata signer: [`0x9A19b5050DbbAabd856F1d81972a240FDc8d5bF5`](https://testnet.snowtrace.io/address/0x9A19b5050DbbAabd856F1d81972a240FDc8d5bF5). Cả hai token đã khoá địa chỉ marketplace (`lockMarketplace`).
-- Frontend được cấu hình deploy trên Vercel.
+- Frontend đang chạy trên Vercel: https://salx-avalanche.vercel.app (marketplace: [/marketplace](https://salx-avalanche.vercel.app/marketplace)). Backend API chạy trên Render (gói Free, có thể mất khoảng 1 phút để khởi động lại sau thời gian không có truy cập).
 - Có test: Hardhat cho contract, Vitest cho các hook frontend, script kiểm thử cho backend.
 
 ## Chạy dự án
