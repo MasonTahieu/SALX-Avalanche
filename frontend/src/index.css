@@ -129,7 +129,14 @@ button,input,textarea,select{font:inherit;color:inherit} a{color:inherit;text-de
 /* ===================================================================
    Full-bleed dark page wrapper (HomePage, RetirePage, etc.)
 =================================================================== */
-.home-dc{width:100vw;margin-left:calc(50% - 50vw);margin-top:-32px;background:var(--bg);color:var(--ink);overflow-x:hidden}
+/* Full bleed = the width of #root, not 100vw: 100vw includes a classic (non-overlay)
+   scrollbar, so the wrapper ended up a scrollbar's width wider than the page. A container
+   on #root (not <html>/<body>, where containment stops body overflow propagating to the
+   viewport and breaks the sticky header) makes 100cqw the page width without the scrollbar. */
+#root:has(.home-dc){container-type:inline-size}
+.home-dc{width:100cqw;margin-left:calc(50% - 50cqw);margin-top:-32px;background:var(--bg);color:var(--ink);overflow-x:hidden}
+/* Home headlines use cqi (% of this box's content width) so long words fit on phones. */
+.home-dc-fit{container-type:inline-size}
 .home-dc-section{max-width:1120px;margin:0 auto;padding:0 34px}
 .home-dc-link{transition:border-color .2s,background .2s}
 .home-dc-link:hover{border-color:rgba(45,201,34,.4)!important;background:rgba(45,201,34,.05)!important}
@@ -141,7 +148,7 @@ button,input,textarea,select{font:inherit;color:inherit} a{color:inherit;text-de
 .home-dc-btn:active{opacity:.72;transform:scale(.98)}
 .home-dc-card{transition:transform .2s ease}
 .home-dc-card:hover{transform:translateY(-4px)}
-@media(max-width:768px){.home-dc-grid-copy{grid-template-columns:1fr!important;gap:32px!important}.home-dc-grid-2col{grid-template-columns:1fr!important;gap:32px!important}.home-dc-scroller article{flex-basis:78vw!important}.home-dc-section{padding-left:20px!important;padding-right:20px!important}}
+@media(max-width:768px){.home-dc-grid-copy{grid-template-columns:1fr!important;gap:32px!important}.home-dc-grid-2col{grid-template-columns:1fr!important;gap:32px!important}.home-dc-scroller article{flex-basis:78vw!important}.home-dc-section,.home-dc-hero{padding-left:20px!important;padding-right:20px!important}}
 
 /* ===================================================================
    Marketplace DC layout

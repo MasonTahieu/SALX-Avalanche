@@ -107,7 +107,7 @@ export function HomePage() {
     <div className="home-dc" style={{ animation: 'fadeUp .35s ease' }}>
 
       {/* ── HERO ── */}
-      <section style={{ maxWidth: 1440, margin: '0 auto', padding: '38px 48px 74px' }}>
+      <section className="home-dc-hero home-dc-fit" style={{ maxWidth: 1440, margin: '0 auto', padding: '38px 48px 74px' }}>
 
         {/* eyebrow */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontFamily: MONO, fontSize: 9, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--mut)', marginBottom: 24 }}>
@@ -143,7 +143,9 @@ export function HomePage() {
 
         {/* copy row */}
         <div className="home-dc-grid-copy" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.08fr) minmax(260px,.72fr)', gap: 70, alignItems: 'end' }}>
-          <h1 style={{ fontFamily: SYNE, fontWeight: 800, fontSize: 'clamp(52px,7vw,84px)', lineHeight: .88, letterSpacing: '-.02em', margin: 0, color: 'var(--g)', textShadow: 'var(--hero-glow)' }}>
+          {/* 12cqi = 12% of the hero's content width, so the widest word ("CULTURE", ~8em)
+              still fits on phones. It only wins below ~470px; wider screens keep the clamp. */}
+          <h1 style={{ fontFamily: SYNE, fontWeight: 800, fontSize: 'min(clamp(52px,7vw,84px),12cqi)', lineHeight: .88, letterSpacing: '-.02em', margin: 0, color: 'var(--g)', textShadow: 'var(--hero-glow)' }}>
             THE CARBON<br />CULTURE IS<br />ON-CHAIN.
           </h1>
           <div>
@@ -236,12 +238,13 @@ export function HomePage() {
 
       {/* ── 03 / THE FINAL CUT ── */}
       <Reveal>
-        <section className="home-dc-section" style={{ padding: '80px 34px 100px', borderTop: '1px solid var(--bd)' }}>
+        <section className="home-dc-section home-dc-fit" style={{ padding: '80px 34px 100px', borderTop: '1px solid var(--bd)' }}>
           <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--mut)' }}>
             03 / THE FINAL CUT
           </span>
           <div className="home-dc-grid-2col" style={{ display: 'grid', gridTemplateColumns: '1.05fr .95fr', gap: 86, marginTop: 28, alignItems: 'end' }}>
-            <h2 style={{ fontFamily: SYNE, fontWeight: 800, fontSize: 'clamp(42px,5.2vw,68px)', lineHeight: .91, letterSpacing: '-.02em', margin: 0, color: 'var(--ink)' }}>
+            {/* "PERMANENT." is ~11.1em wide; 8.8cqi keeps it inside the section on phones (<~515px). */}
+            <h2 style={{ fontFamily: SYNE, fontWeight: 800, fontSize: 'min(clamp(42px,5.2vw,68px),8.8cqi)', lineHeight: .91, letterSpacing: '-.02em', margin: 0, color: 'var(--ink)' }}>
               MAKE THE<br /><span style={{ color: 'var(--g)' }}>IMPACT PERMANENT.</span>
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
