@@ -35,6 +35,42 @@ export default defineConfig({
     },
   },
 
+  // Snowtrace do Routescan vận hành. Trỏ API verify của Fuji/C-Chain sang
+  // Routescan để source hiện trên testnet.snowtrace.io / snowtrace.io
+  // (mặc định Hardhat gửi sang Etherscan V2, hiển thị trên snowscan).
+  chainDescriptors: {
+    43113: {
+      name: "Avalanche Fuji",
+      blockExplorers: {
+        etherscan: {
+          name: "Snowtrace",
+          url: "https://testnet.snowtrace.io",
+          apiUrl:
+            "https://api.routescan.io/v2/network/testnet/evm/43113/etherscan/api",
+        },
+      },
+    },
+    43114: {
+      name: "Avalanche C-Chain",
+      blockExplorers: {
+        etherscan: {
+          name: "Snowtrace",
+          url: "https://snowtrace.io",
+          apiUrl:
+            "https://api.routescan.io/v2/network/mainnet/evm/43114/etherscan/api",
+        },
+      },
+    },
+  },
+
+  verify: {
+    // Routescan không yêu cầu API key thật; chuỗi bất kỳ là được.
+    etherscan: {
+      apiKey: process.env.SNOWTRACE_API_KEY || "verifyContract",
+    },
+    blockscout: { enabled: false },
+  },
+
   networks: {
     // Avalanche Fuji C-Chain testnet: mạng chính của SALX cho UniHack.
     fuji: {
