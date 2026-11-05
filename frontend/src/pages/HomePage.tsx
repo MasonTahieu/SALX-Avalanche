@@ -126,7 +126,13 @@ export function HomePage() {
             objectFit: 'cover', objectPosition: 'center',
             filter: 'contrast(1.08) brightness(1.02)', pointerEvents: 'none', transform: 'translateZ(0)',
           }} />
-          <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'url("/assets/mayden.png") center / cover no-repeat' }} />
+          <img
+            src="/assets/mayden-1600.webp"
+            srcSet="/assets/mayden-1600.webp 1600w, /assets/mayden-3072.webp 3072w"
+            sizes="100vw"
+            alt="" aria-hidden="true" fetchPriority="high" decoding="async"
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', pointerEvents: 'none' }}
+          />
           <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', userSelect: 'none' }}>
             <span style={{ fontFamily: SYNE, fontWeight: 800, fontSize: 'clamp(80px,12vw,155px)', lineHeight: 1, letterSpacing: '-.03em', color: '#ede7dc', textShadow: '0 2px 48px rgba(0,0,0,.7)', display: 'inline-flex', gap: 0 }}>
               <span ref={heroSRef} style={{ display: 'inline-block', willChange: 'transform, opacity' }}>S</span>
