@@ -13,6 +13,7 @@ const {
 
 const router = express.Router();
 
+const THUMB_WIDTH = 320;
 const PREVIEW_WIDTH = 1000;
 const DOWNLOAD_WIDTH = 2000;
 const PNG_CACHE_LIMIT = 48;
@@ -210,7 +211,7 @@ router.get('/token/:tokenId', async (req, res) => {
   }
 });
 
-// Ảnh chứng chỉ (PNG): mặc định hiển thị 1000 px; ?download=1 tải về bản 2000 px.
+// Ảnh chứng chỉ (PNG): mặc định 1000 px; ?size=thumb 320 px; ?download=1 tải về bản 2000 px.
 router.get('/token/:tokenId/image.png', async (req, res) => {
   try {
     const tokenId = Number(req.params.tokenId);
@@ -229,7 +230,8 @@ router.get('/token/:tokenId/image.png', async (req, res) => {
     }
 
     const download = req.query.download === '1' || req.query.download === 'true';
-    const png = certificatePng(certificate, download ? DOWNLOAD_WIDTH : PREVIEW_WIDTH);
+    const width = download ? DOWNLOAD_WIDTH : req.query.size === 'thumb' ? THUMB_WIDTH : PREVIEW_WIDTH;
+    const png = certificatePng(certificate, width);
     if (!png) {
       return res.status(404).json({ error: 'Chứng chỉ chưa có ảnh để tải' });
     }
