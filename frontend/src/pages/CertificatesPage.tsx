@@ -1,14 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { backend } from '../services/backend';
 import { useWallet } from '../contexts/WalletContext';
 import type { Certificate, Project, TransactionEvent } from '../types/domain';
 import { formatDate, formatNumber, shortAddress } from '../lib/format';
 import { env } from '../config/env';
 import { WalletButton } from '../components/wallet/WalletButton';
-import { CertificateCard } from '../components/certificate/CertificateCard';
+import { CertificateCarousel } from '../components/certificate/CertificateCarousel';
 import { useLanguage } from '../contexts/LanguageContext';
 import {
-  CertBadge,
   MONO,
   MonoNotice,
   Reveal,
@@ -37,6 +37,21 @@ export function CertificatesPage() {
   const [projectMap, setProjectMap] = useState<Map<number, Project>>(new Map());
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // ?sbt=<tokenId> opens the carousel on that certificate and follows it.
+  const requestedSbt = Number(searchParams.get('sbt'));
+  const initialIndex = Math.max(0, certs.findIndex(c => c.certificateTokenId === requestedSbt));
+  const syncSbtParam = useCallback((index: number) => {
+    const tokenId = certs[index]?.certificateTokenId;
+    if (tokenId == null) return;
+    setSearchParams(prev => {
+      if (prev.get('sbt') === String(tokenId)) return prev;
+      const next = new URLSearchParams(prev);
+      next.set('sbt', String(tokenId));
+      return next;
+    }, { replace: true });
+  }, [certs, setSearchParams]);
 
   useEffect(() => {
     if (!wallet.address) return;
@@ -120,18 +135,14 @@ export function CertificatesPage() {
               </MonoNotice>
             </div>
           ) : (
-            // auto-fit: a lone certificate spans the row and lays out side by side.
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,340px),1fr))', gap: 16, alignItems: 'start' }}>
-              {certs.map(certificate => (
-                <div key={certificate.certificateTokenId}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, padding: '0 2px' }}>
-                    <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: '.08em', color: 'var(--ink)' }}>SBT #{certificate.certificateTokenId}</span>
-                    <CertBadge status={certificate.status} />
-                  </div>
-                  <CertificateCard certificate={certificate} project={projectMap.get(certificate.projectId)} />
-                </div>
-              ))}
-            </div>
+            <CertificateCarousel
+              // Remount when the wallet's collection changes so the deep link is applied again.
+              key={certs.map(c => c.certificateTokenId).join(',')}
+              certificates={certs}
+              projects={projectMap}
+              initialIndex={initialIndex}
+              onIndexChange={syncSbtParam}
+            />
           )}
         </div>
       </Reveal>

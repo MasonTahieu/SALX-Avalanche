@@ -24,7 +24,7 @@ function DetailRow({ label, value, href, mono }: { label: string; value: string;
   );
 }
 
-export function CertificateCard({ certificate, project }: { certificate: Certificate; project?: Project }) {
+export function CertificateCard({ certificate, project, eager = false }: { certificate: Certificate; project?: Project; eager?: boolean }) {
   const [imageState, setImageState] = useState<ImageState>('loading');
   const [copied, setCopied] = useState(false);
 
@@ -73,7 +73,7 @@ export function CertificateCard({ certificate, project }: { certificate: Certifi
               alt={`SALX carbon retirement certificate SBT #${tokenId}: ${certificate.retiredCO2Kg} kg CO₂e retired`}
               width={1000}
               height={1000}
-              loading="lazy"
+              loading={eager ? 'eager' : 'lazy'}
               decoding="async"
               onLoad={() => setImageState('ready')}
               onError={() => setImageState('error')}

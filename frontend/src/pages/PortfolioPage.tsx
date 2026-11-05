@@ -31,6 +31,7 @@ export function PortfolioPage() {
   const switchTab = (tab: 'portfolio' | 'certificates') => {
     if (tab === 'portfolio') {
       searchParams.delete('tab');
+      searchParams.delete('sbt');
       setSearchParams(searchParams, { replace: true });
     } else {
       setSearchParams({ tab }, { replace: true });
