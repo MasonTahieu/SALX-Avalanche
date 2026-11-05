@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Contract } from 'ethers';
+import { BrowserProvider, Contract } from 'ethers';
 import { backend } from '../services/backend';
-import { getBrowserProvider, ensureTargetChain } from '../services/blockchain';
+import { getInjectedProvider, ensureTargetChain } from '../services/blockchain';
 import { env } from '../config/env';
 import marketplaceArtifact from '../contracts/abis/SALMarketplace.json';
 import type { Project, VoteProgress } from '../types/domain';
@@ -53,6 +53,10 @@ function StatusMsg({ msg }: { msg: string | null }) {
     </div>
   );
 }
+
+// This page is lazy-loaded and imports ethers itself, so it can build the
+// provider synchronously.
+const getBrowserProvider = () => new BrowserProvider(getInjectedProvider());
 
 // ── On-chain validator helpers (call contract directly; blockchain.ts is read-only) ──
 async function readValidatorList(): Promise<string[]> {
@@ -333,7 +337,12 @@ export function AdminPage() {
   // Fetch contract owner to gate admin actions to the owner wallet
   useEffect(() => {
     if (!env.marketplaceAddress) return;
-    const provider = getBrowserProvider();
+    let provider: BrowserProvider;
+    try {
+      provider = getBrowserProvider();
+    } catch {
+      return; // no wallet extension: show the page, owner check waits for a wallet
+    }
     const mp = new Contract(env.marketplaceAddress, ['function owner() view returns (address)'], provider);
     mp.owner()
       .then((addr: string) => setContractOwner(addr.toLowerCase()))

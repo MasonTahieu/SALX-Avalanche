@@ -4,6 +4,19 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  build: {
+    rollupOptions: {
+      output: {
+        // React rarely changes between deploys; a separate chunk stays cached
+        // in the browser when only app code changes.
+        manualChunks(id) {
+          if (/[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/.test(id)) {
+            return 'react-vendor';
+          }
+        },
+      },
+    },
+  },
   server: {
     allowedHosts: ['barmaid-anaconda-blinked.ngrok-free.dev']
   }

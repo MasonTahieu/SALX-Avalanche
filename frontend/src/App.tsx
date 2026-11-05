@@ -1,14 +1,18 @@
+import { lazy } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from './components/layout/AppShell';
 import { HomePage } from './pages/HomePage';
-import { MarketplacePage } from './pages/MarketplacePage';
-import { SubmitProjectPage } from './pages/SubmitProjectPage';
-import { PortfolioPage } from './pages/PortfolioPage';
-import { AdminPage } from './pages/AdminPage';
-import { RetirePage } from './pages/RetirePage';
-import { LeaderboardPage } from './pages/LeaderboardPage';
-import { ValidatorPage } from './pages/ValidatorPage';
-import { ActivityPage } from './pages/ActivityPage';
+
+// The landing page ships in the main bundle; every other page is its own
+// chunk, fetched the first time its route is opened.
+const MarketplacePage = lazy(() => import('./pages/MarketplacePage').then(m => ({ default: m.MarketplacePage })));
+const SubmitProjectPage = lazy(() => import('./pages/SubmitProjectPage').then(m => ({ default: m.SubmitProjectPage })));
+const PortfolioPage = lazy(() => import('./pages/PortfolioPage').then(m => ({ default: m.PortfolioPage })));
+const AdminPage = lazy(() => import('./pages/AdminPage').then(m => ({ default: m.AdminPage })));
+const RetirePage = lazy(() => import('./pages/RetirePage').then(m => ({ default: m.RetirePage })));
+const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage').then(m => ({ default: m.LeaderboardPage })));
+const ValidatorPage = lazy(() => import('./pages/ValidatorPage').then(m => ({ default: m.ValidatorPage })));
+const ActivityPage = lazy(() => import('./pages/ActivityPage').then(m => ({ default: m.ActivityPage })));
 
 export default function App() {
   return <Routes>

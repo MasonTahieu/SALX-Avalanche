@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useWallet } from '../../contexts/WalletContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -250,7 +250,10 @@ export function AppShell() {
 
       {/* ── Page content ── */}
       <main className="sal-shell" style={{ padding: '32px 0', flex: 1 }}>
-        <Outlet />
+        {/* Pages are lazy chunks; keep the footer from jumping up while one loads. */}
+        <Suspense fallback={<div aria-busy="true" style={{ minHeight: '60vh' }} />}>
+          <Outlet />
+        </Suspense>
       </main>
 
       {/* ── Connect Wallet Modal ── */}

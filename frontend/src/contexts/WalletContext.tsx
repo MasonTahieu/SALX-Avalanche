@@ -89,7 +89,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       const injected = await restoreWalletProvider(kind);
       setActiveInjectedProviderState(injected);
       const accounts = await injected.request({ method: 'eth_accounts' }) as string[];
-      const provider = getBrowserProvider(injected);
+      const provider = await getBrowserProvider(injected);
       const network = await provider.getNetwork();
       const nextAddress = accounts[0]?.toLowerCase() || null;
       setAddress(nextAddress);
@@ -128,7 +128,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         if (permErr?.code === 4001) throw permErr;
       }
 
-      await getBrowserProvider(injected).send('eth_requestAccounts', []);
+      await (await getBrowserProvider(injected)).send('eth_requestAccounts', []);
 
       const result = await connectWallet(kind);
       setAddress(result.address);
@@ -169,7 +169,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       await switchToNetwork(nextChainId);
-      const provider = getBrowserProvider(activeInjectedProvider);
+      const provider = await getBrowserProvider(activeInjectedProvider);
       const network = await provider.getNetwork();
       setChainId(Number(network.chainId));
       await refreshBalance();

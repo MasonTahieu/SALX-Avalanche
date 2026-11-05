@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Contract } from 'ethers';
+import { BrowserProvider, Contract } from 'ethers';
 import { backend } from '../services/backend';
-import { getBrowserProvider, ensureTargetChain } from '../services/blockchain';
+import { getInjectedProvider, ensureTargetChain } from '../services/blockchain';
 import { env } from '../config/env';
 import marketplaceArtifact from '../contracts/abis/SALMarketplace.json';
 import type { Project, VoteProgress } from '../types/domain';
@@ -10,6 +10,10 @@ import { useWallet } from '../contexts/WalletContext';
 
 const MONO = "'JetBrains Mono', monospace";
 const SYNE = "'Syne', sans-serif";
+
+// This page is lazy-loaded and imports ethers itself, so it can build the
+// provider synchronously.
+const getBrowserProvider = () => new BrowserProvider(getInjectedProvider());
 
 // ── Scroll-reveal ──────────────────────────────────────────────────────────
 function Reveal({ children }: { children: React.ReactNode }) {

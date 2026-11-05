@@ -1,8 +1,21 @@
-import { BrowserProvider, Contract, formatEther, parseEther, type Eip1193Provider } from 'ethers';
+import type { ContractRunner, Eip1193Provider } from 'ethers';
 import { assertPublicContractConfig, env } from '../config/env';
-import marketplaceArtifact from '../contracts/abis/SALMarketplace.json';
-import salArtifact from '../contracts/abis/SAL1155.json';
-import certificateArtifact from '../contracts/abis/GreenCertificateSBT.json';
+
+// ethers (~700 KB with its crypto deps) and the contract ABIs are loaded on
+// first use instead of at startup, so pages render before a wallet is needed.
+let ethersModule: Promise<typeof import('ethers')> | null = null;
+const loadEthers = () => (ethersModule ??= import('ethers'));
+
+let abiModules: Promise<{ marketplace: any[]; sal: any[]; certificate: any[] }> | null = null;
+const loadAbis = () => (abiModules ??= Promise.all([
+  import('../contracts/abis/SALMarketplace.json'),
+  import('../contracts/abis/SAL1155.json'),
+  import('../contracts/abis/GreenCertificateSBT.json'),
+]).then(([marketplace, sal, certificate]) => ({
+  marketplace: marketplace.default.abi,
+  sal: sal.default.abi,
+  certificate: certificate.default.abi,
+})));
 
 export type WalletKind = 'core' | 'metamask' | 'coin98';
 
@@ -117,7 +130,13 @@ export async function restoreWalletProvider(kind: WalletKind) {
 
 const ethereum = () => activeProvider || defaultInjectedProvider();
 
-export const getBrowserProvider = (provider: InjectedEthereum = ethereum()) => new BrowserProvider(provider);
+/** The connected wallet's EIP-1193 provider (no ethers needed). */
+export const getInjectedProvider = () => ethereum();
+
+export async function getBrowserProvider(provider: InjectedEthereum = ethereum()) {
+  const { BrowserProvider } = await loadEthers();
+  return new BrowserProvider(provider);
+}
 
 export async function ensureTargetChain(provider: InjectedEthereum = ethereum()) {
   const chainIdHex = `0x${env.chainId.toString(16)}`;
@@ -156,8 +175,9 @@ export async function switchToNetwork(chainId: number) {
 }
 
 export async function nativeBalance(owner: string) {
-  const provider = getBrowserProvider();
+  const provider = await getBrowserProvider();
   const balance = await provider.getBalance(owner);
+  const { formatEther } = await loadEthers();
   return formatEther(balance);
 }
 
@@ -165,34 +185,33 @@ export async function connectWallet(kind: WalletKind) {
   const injected = await getWalletProvider(kind);
   setActiveWalletProvider(injected, kind);
   await ensureTargetChain(injected);
-  const provider = getBrowserProvider(injected);
+  const provider = await getBrowserProvider(injected);
   await provider.send('eth_requestAccounts', []);
   const signer = await provider.getSigner();
   const network = await provider.getNetwork();
   return { address: (await signer.getAddress()).toLowerCase(), chainId: Number(network.chainId), provider: injected, kind };
 }
 
+async function contractsFor(runner: ContractRunner) {
+  const [{ Contract }, abi] = await Promise.all([loadEthers(), loadAbis()]);
+  return {
+    marketplace: new Contract(env.marketplaceAddress, abi.marketplace, runner),
+    sal: new Contract(env.sal1155Address, abi.sal, runner),
+    certificate: new Contract(env.certificateAddress, abi.certificate, runner),
+  };
+}
+
 async function signerContracts() {
   assertPublicContractConfig();
   await ensureTargetChain();
-  const provider = getBrowserProvider();
+  const provider = await getBrowserProvider();
   const signer = await provider.getSigner();
-  return {
-    signer,
-    marketplace: new Contract(env.marketplaceAddress, marketplaceArtifact.abi, signer),
-    sal: new Contract(env.sal1155Address, salArtifact.abi, signer),
-    certificate: new Contract(env.certificateAddress, certificateArtifact.abi, signer),
-  };
+  return { signer, ...(await contractsFor(signer)) };
 }
 
 async function readContracts() {
   assertPublicContractConfig();
-  const provider = getBrowserProvider();
-  return {
-    marketplace: new Contract(env.marketplaceAddress, marketplaceArtifact.abi, provider),
-    sal: new Contract(env.sal1155Address, salArtifact.abi, provider),
-    certificate: new Contract(env.certificateAddress, certificateArtifact.abi, provider),
-  };
+  return contractsFor(await getBrowserProvider());
 }
 
 export async function waitTx(tx: any) {
@@ -215,6 +234,7 @@ export async function ensureMarketplaceApproval(owner: string) {
 export async function createListing(owner: string, projectId: number, amount: number, pricePerUnitETH: string) {
   await ensureMarketplaceApproval(owner);
   const { marketplace } = await signerContracts();
+  const { parseEther } = await loadEthers();
   return waitTx(await marketplace.createListing(projectId, amount, parseEther(pricePerUnitETH)));
 }
 
@@ -263,6 +283,7 @@ export async function retireSAL(
 
 export async function retirementConfig() {
   const { marketplace } = await readContracts();
+  const { formatEther } = await loadEthers();
   const [maxProjects, kgPerSAL, certFeeWei] = await Promise.all([
     marketplace.MAX_RETIREMENT_PROJECTS(),
     marketplace.KG_CO2_PER_SAL(),
@@ -291,6 +312,7 @@ export async function salBalance(owner: string, projectId: number) {
 
 export async function accountFinance(owner: string) {
   const { marketplace } = await readContracts();
+  const { formatEther } = await loadEthers();
   const [refundWei, proceedsWei, certFeeWei, minPriceWei, maxPriceWei, paused] = await Promise.all([
     marketplace.tokenizationFeeRefundBalances(owner),
     marketplace.sellerBalances(owner),
