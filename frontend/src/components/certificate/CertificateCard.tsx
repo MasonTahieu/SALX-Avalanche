@@ -2,13 +2,13 @@ import { useState } from 'react';
 import type { Certificate, Project } from '../../types/domain';
 import { formatDate, shortAddress } from '../../lib/format';
 import { env } from '../../config/env';
+import { certificateImageUrl } from '../../lib/certificateImage';
+import { CertificateLightbox } from './CertificateLightbox';
 
 const BODY = 'var(--font-body)';
 const MONO = 'var(--font-mono)';
 const BD = 'var(--bd-str)';
 const BD2 = 'var(--bd-soft)';
-// Paper colour of the certificate artwork, shown while the image loads.
-const PAPER = '#f8f6f0';
 
 type ImageState = 'loading' | 'ready' | 'error';
 
@@ -27,12 +27,14 @@ function DetailRow({ label, value, href, mono }: { label: string; value: string;
 export function CertificateCard({ certificate, project, eager = false }: { certificate: Certificate; project?: Project; eager?: boolean }) {
   const [imageState, setImageState] = useState<ImageState>('loading');
   const [copied, setCopied] = useState(false);
+  const [zoomed, setZoomed] = useState(false);
 
   const tokenId = certificate.certificateTokenId;
   // Rendered by the backend in the current certificate design from the stored
-  // certificate data; ?download=1 returns a 2000 px attachment.
-  const imageUrl = tokenId ? `${env.apiUrl}/api/certificates/token/${tokenId}/image.png` : null;
-  const downloadUrl = imageUrl ? `${imageUrl}?download=1` : null;
+  // certificate data; the download variant is a 2000 px attachment.
+  const imageUrl = tokenId ? certificateImageUrl(tokenId) : null;
+  const downloadUrl = tokenId ? certificateImageUrl(tokenId, 'download') : null;
+  const imageAlt = `SALX carbon retirement certificate SBT #${tokenId}: ${certificate.retiredCO2Kg.toLocaleString('en-US')} kg CO₂e retired`;
 
   const pMeta = (project?.projectMetadata as any) ?? null;
   const findAttr = (type: string): string | undefined =>
@@ -62,7 +64,7 @@ export function CertificateCard({ certificate, project, eager = false }: { certi
       {/* ── The certificate itself ── */}
       <div style={{ flex: '1 1 300px', maxWidth: 520, minWidth: 0 }}>
         {imageUrl && imageState !== 'error' ? (
-          <a href={imageUrl} target="_blank" rel="noreferrer" title="Open full size" style={{ display: 'block', position: 'relative', aspectRatio: '1 / 1', background: PAPER, borderRadius: 6, overflow: 'hidden' }}>
+          <button type="button" className="cert-zoom-trigger" onClick={() => setZoomed(true)} aria-label={`Zoom in on certificate SBT #${tokenId}`}>
             {imageState === 'loading' && (
               <span style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', fontFamily: MONO, fontSize: 11, letterSpacing: '.08em', color: '#56655d' }}>
                 Preparing certificate…
@@ -70,7 +72,7 @@ export function CertificateCard({ certificate, project, eager = false }: { certi
             )}
             <img
               src={imageUrl}
-              alt={`SALX carbon retirement certificate SBT #${tokenId}: ${certificate.retiredCO2Kg} kg CO₂e retired`}
+              alt={imageAlt}
               width={1000}
               height={1000}
               loading={eager ? 'eager' : 'lazy'}
@@ -79,7 +81,8 @@ export function CertificateCard({ certificate, project, eager = false }: { certi
               onError={() => setImageState('error')}
               style={{ display: 'block', width: '100%', height: '100%', opacity: imageState === 'ready' ? 1 : 0, transition: 'opacity .3s ease-out' }}
             />
-          </a>
+            {imageState === 'ready' && <span className="cert-zoom-trigger__hint" aria-hidden="true">CLICK TO ZOOM</span>}
+          </button>
         ) : (
           <div style={{ aspectRatio: '1 / 1', display: 'grid', placeItems: 'center', textAlign: 'center', padding: 24, background: 'var(--surf2)', borderRadius: 6, fontSize: 13, lineHeight: 1.6, color: 'var(--mut)' }}>
             {imageUrl
@@ -119,6 +122,17 @@ export function CertificateCard({ certificate, project, eager = false }: { certi
           {contractLink && <DetailRow label="Certificate contract" value={shortAddress(env.certificateAddress, 8, 6)} href={contractLink} mono />}
         </div>
       </div>
+
+      {imageUrl && downloadUrl && (
+        <CertificateLightbox
+          open={zoomed}
+          onClose={() => setZoomed(false)}
+          imageUrl={imageUrl}
+          downloadUrl={downloadUrl}
+          title={`SBT #${tokenId} · ${certificate.retiredCO2Kg.toLocaleString('en-US')} kg CO₂e`}
+          alt={imageAlt}
+        />
+      )}
     </div>
   );
 }

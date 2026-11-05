@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import type { Certificate, Project } from '../../types/domain';
-import { env } from '../../config/env';
+import { certificateImageUrl } from '../../lib/certificateImage';
 import { CertificateCard } from './CertificateCard';
 import { CertBadge, MONO } from '../dashboard/DashboardKit';
 import './CertificateCarousel.css';
@@ -148,7 +148,7 @@ export function CertificateCarousel({ certificates, projects, initialIndex = 0, 
                 onClick={() => goTo(i)}
               >
                 <img
-                  src={`${env.apiUrl}/api/certificates/token/${certificate.certificateTokenId}/image.png?size=thumb`}
+                  src={certificateImageUrl(certificate.certificateTokenId, 'thumb')}
                   alt=""
                   width={56}
                   height={56}
