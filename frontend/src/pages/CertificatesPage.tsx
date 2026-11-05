@@ -2,27 +2,33 @@ import { useEffect, useState } from 'react';
 import { backend } from '../services/backend';
 import { useWallet } from '../contexts/WalletContext';
 import type { Certificate, Project, TransactionEvent } from '../types/domain';
-import { formatDate } from '../lib/format';
-import { Card } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
+import { formatDate, formatNumber, shortAddress } from '../lib/format';
+import { env } from '../config/env';
 import { WalletButton } from '../components/wallet/WalletButton';
 import { CertificateCard } from '../components/certificate/CertificateCard';
-import { EmptyState } from '../components/ui/EmptyState';
 import { useLanguage } from '../contexts/LanguageContext';
+import {
+  CertBadge,
+  MONO,
+  MonoNotice,
+  Reveal,
+  SectionLabel,
+  SectionLink,
+  StatCard,
+  StatGrid,
+  TxTypePill,
+} from '../components/dashboard/DashboardKit';
 
-type CertStatus = Certificate['status'];
+const HISTORY_LIMIT = 10;
 
-const STATUS_TONE: Record<CertStatus, 'success' | 'danger' | 'warning' | 'neutral'> = {
-  ACTIVE: 'success',
-  REVOKED: 'danger',
-  PENDING: 'warning',
-  EXPIRED: 'neutral',
-};
+// Marketplace purchases are indexed as TRANSFER events with a transferKind.
+const txLabel = (tx: TransactionEvent) =>
+  tx.transactionType === 'TRANSFER' && tx.metadata?.transferKind === 'MARKETPLACE_PURCHASE'
+    ? 'PURCHASE'
+    : tx.transactionType;
 
-function CertStatusBadge({ status }: { status: CertStatus }) {
-  return <Badge tone={STATUS_TONE[status] ?? 'neutral'}>{status}</Badge>;
-}
-
+// Dashboard → Certificates tab. Rendered inside PortfolioPage, which owns the
+// page header, tab bar and footer.
 export function CertificatesPage() {
   const wallet = useWallet();
   const { t } = useLanguage();
@@ -30,10 +36,12 @@ export function CertificatesPage() {
   const [txs, setTxs] = useState<TransactionEvent[]>([]);
   const [projectMap, setProjectMap] = useState<Map<number, Project>>(new Map());
   const [loading, setLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     if (!wallet.address) return;
     setLoading(true);
+    setFailed(false);
     // Certs + txs are critical — load together; a failure here is a real error
     Promise.all([
       backend.certificatesByWallet(wallet.address),
@@ -43,7 +51,7 @@ export function CertificatesPage() {
         setCerts(certificates);
         setTxs(transactions);
       })
-      .catch(() => {})
+      .catch(() => setFailed(true))
       .finally(() => setLoading(false));
 
     // Projects are non-critical — only needed to enrich CertificateCard with metadata
@@ -60,98 +68,115 @@ export function CertificatesPage() {
 
   if (!wallet.address) {
     return (
-      <Card className="p-6">
-        <h1 className="text-2xl font-black">{t('cert.title')}</h1>
-        <p className="mt-2 text-[var(--sal-muted)]">{t('dashboard.notConnected')}</p>
-        <WalletButton className="mt-4" />
-      </Card>
+      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 14, background: 'var(--surf)', border: '1px solid var(--bd-mid)', borderRadius: 10, padding: '14px 18px', marginBottom: 24 }}>
+        <span style={{ fontFamily: MONO, fontSize: 9, color: 'var(--mut)', letterSpacing: '.06em', flex: 1, minWidth: 200 }}>
+          Connect your wallet to see your retirement certificates.
+        </span>
+        <WalletButton />
+      </div>
     );
   }
 
-  const activeCerts = certs.filter(c => c.status === 'ACTIVE');
+  const activeCount = certs.filter(c => c.status === 'ACTIVE').length;
+  const revokedCount = certs.filter(c => c.status === 'REVOKED').length;
+  const retiredKg = certs.filter(c => c.status === 'ACTIVE').reduce((sum, c) => sum + (c.retiredCO2Kg || 0), 0);
+  const retiredSal = certs.filter(c => c.status === 'ACTIVE').reduce((sum, c) => sum + (c.retiredTokenAmount || 0), 0);
+  const latest = [...certs].sort((a, b) => new Date(b.mintedAt ?? 0).getTime() - new Date(a.mintedAt ?? 0).getTime())[0];
+  const latestDate = latest?.mintedAt
+    ? new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(latest.mintedAt))
+    : '—';
 
   return (
-    <div className="space-y-6">
-      <div className="sal-hero p-6 sm:p-8">
-        <div className="text-xs font-black uppercase tracking-widest text-white/55">{t('cert.eyebrow')}</div>
-        <h1 className="mt-2 text-2xl font-black sm:text-3xl">{t('cert.title')}</h1>
-        <p className="mt-2 max-w-xl text-sm text-white/70">{t('cert.desc')}</p>
-        {certs.length > 0 && (
-          <div className="mt-6 flex flex-wrap gap-3">
-            <div className="market-hero-stat">
-              <span>Soulbound Tokens</span>
-              <strong>{certs.length}</strong>
-            </div>
-            <div className="market-hero-stat">
-              <span>Active</span>
-              <strong>{activeCerts.length}</strong>
-            </div>
-          </div>
-        )}
-      </div>
+    <>
+      {/* Stats */}
+      <Reveal>
+        <StatGrid>
+          <StatCard label="SOULBOUND TOKENS" value={loading ? '—' : certs.length} sub="minted to this wallet" />
+          <StatCard label="ACTIVE" value={loading ? '—' : activeCount} sub={revokedCount ? `${revokedCount} revoked` : 'none revoked'} />
+          <StatCard label="CO₂ RETIRED" value={loading ? '—' : formatNumber(retiredKg)} unit="kg CO₂e" sub={`= ${formatNumber(retiredSal)} SAL burned`} accent />
+          <StatCard label="LATEST" value={loading ? '—' : latestDate} sub={latest ? `SBT #${latest.certificateTokenId}` : 'no certificate yet'} />
+        </StatGrid>
+      </Reveal>
 
-      {loading ? (
-        <div className="grid gap-5 lg:grid-cols-2">
-          <CertSkeletonCard />
-          <CertSkeletonCard />
-        </div>
-      ) : certs.length === 0 ? (
-        <EmptyState title={t('cert.none')} description={t('cert.noneHint')} />
-      ) : (
-        <div className="grid gap-5 lg:grid-cols-2">
-          {certs.map(certificate => (
-            <div key={certificate.certificateTokenId} className="space-y-2">
-              <div className="flex items-center justify-between px-1">
-                <span className="text-sm font-black">SBT #{certificate.certificateTokenId}</span>
-                <CertStatusBadge status={certificate.status} />
-              </div>
-              <CertificateCard certificate={certificate} project={projectMap.get(certificate.projectId)} />
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Certificates */}
+      <Reveal delay={40}>
+        <div style={{ marginBottom: 26 }}>
+          <SectionLabel right={<SectionLink href="/retire">+ RETIRE MORE ↗</SectionLink>}>
+            RETIREMENT CERTIFICATES (SBT)
+          </SectionLabel>
 
-      <Card className="p-5">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-black">{t('cert.history')}</h2>
-            <p className="mt-1 text-xs text-[var(--sal-muted)]">{t('cert.historyHint')}</p>
-          </div>
-          <span className="sal-meta-pill">{txs.length}</span>
-        </div>
-        <div className="mt-4 divide-y divide-[var(--sal-border)]">
-          {txs.length === 0 ? (
-            <div className="py-4 text-sm text-[var(--sal-muted)]">{t('cert.noHistory')}</div>
+          {loading ? (
+            <div style={{ border: '1px solid var(--bd-mid)', borderRadius: 10 }}><MonoNotice>LOADING…</MonoNotice></div>
+          ) : failed ? (
+            <div style={{ border: '1px solid rgba(224,82,82,.3)', borderRadius: 10 }}>
+              <MonoNotice>Could not load certificates. The backend may be waking up — reload in a minute.</MonoNotice>
+            </div>
+          ) : certs.length === 0 ? (
+            <div style={{ border: '1px solid var(--bd-mid)', borderRadius: 10 }}>
+              <MonoNotice>
+                NO CERTIFICATES YET<br />
+                <span style={{ letterSpacing: '.02em' }}>{t('cert.noneHint')}</span><br />
+                <SectionLink href="/retire">RETIRE SAL ↗</SectionLink>
+              </MonoNotice>
+            </div>
           ) : (
-            txs.map((tx, index) => (
-              <div key={`${tx.txHash}-${index}`} className="flex items-center justify-between gap-4 py-3">
-                <div>
-                  <b>{tx.transactionType || 'Blockchain event'}</b>
-                  <div className="text-xs text-[var(--sal-muted)]">{tx.txHash.slice(0, 18)}…</div>
+            // auto-fit: a lone certificate spans the row and lays out side by side.
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,340px),1fr))', gap: 16, alignItems: 'start' }}>
+              {certs.map(certificate => (
+                <div key={certificate.certificateTokenId}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, padding: '0 2px' }}>
+                    <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: '.08em', color: 'var(--ink)' }}>SBT #{certificate.certificateTokenId}</span>
+                    <CertBadge status={certificate.status} />
+                  </div>
+                  <CertificateCard certificate={certificate} project={projectMap.get(certificate.projectId)} />
                 </div>
-                <div className="text-right text-xs text-[var(--sal-muted)]">
-                  <div>{tx.tokenAmount != null ? `${tx.tokenAmount} SAL` : ''}</div>
-                  <div>{formatDate(tx.timestamp)}</div>
-                </div>
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </div>
-      </Card>
-    </div>
-  );
-}
+      </Reveal>
 
-function CertSkeletonCard() {
-  return (
-    <div style={{ background: 'var(--sal-surface)', border: '1px solid var(--sal-border)', borderRadius: 12, overflow: 'hidden' }}>
-      <div style={{ height: 56, background: 'var(--sal-surface-soft)', borderBottom: '1px solid var(--sal-border)' }} className="market-card-skeleton__cover" />
-      <div style={{ height: 190 }} className="market-card-skeleton__cover" />
-      <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div className="market-card-skeleton__line" style={{ width: '60%' }} />
-        <div className="market-card-skeleton__line" style={{ width: '80%' }} />
-        <div className="market-card-skeleton__line" style={{ width: '45%' }} />
-      </div>
-    </div>
+      {/* Transaction history */}
+      <Reveal delay={80}>
+        <div style={{ borderTop: '1px solid var(--bd-mid)', paddingTop: 18 }}>
+          <SectionLabel right={<SectionLink href="/activity">VIEW ALL ↗</SectionLink>}>
+            TRANSACTION HISTORY{txs.length ? ` · ${txs.length}` : ''}
+          </SectionLabel>
+          <div style={{ border: '1px solid var(--bd-mid)', borderRadius: 10, overflow: 'hidden' }}>
+            {loading ? (
+              <MonoNotice>LOADING…</MonoNotice>
+            ) : txs.length === 0 ? (
+              <MonoNotice>NO INDEXED TRANSACTIONS YET</MonoNotice>
+            ) : (
+              txs.slice(0, HISTORY_LIMIT).map((tx, index, shown) => (
+                <div
+                  key={`${tx.txHash}-${index}`}
+                  style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', alignItems: 'center', gap: 16, padding: '12px 16px', borderBottom: index < shown.length - 1 ? '1px solid var(--bd-mid)' : 'none' }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                    <TxTypePill type={txLabel(tx)} />
+                    <a
+                      href={`${env.blockExplorerUrl}/tx/${tx.txHash}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ fontFamily: MONO, fontSize: 10, color: 'var(--ink)', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                    >
+                      {shortAddress(tx.txHash, 10, 6)} <span style={{ color: 'var(--g)' }}>↗</span>
+                    </a>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontFamily: MONO, fontSize: 11, color: 'var(--ink)' }}>
+                      {(tx.amount ?? tx.tokenAmount) != null ? `${formatNumber(Number(tx.amount ?? tx.tokenAmount))} SAL` : '—'}
+                      {tx.co2Kg != null && <span style={{ color: 'var(--mut)' }}> · {formatNumber(tx.co2Kg)} kg</span>}
+                    </div>
+                    <div style={{ fontFamily: MONO, fontSize: 8, color: 'var(--mut)', marginTop: 2 }}>{formatDate(tx.timestamp)}</div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </Reveal>
+    </>
   );
 }

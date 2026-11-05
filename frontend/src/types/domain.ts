@@ -102,9 +102,12 @@ export interface TransactionEvent {
   fromAddress?: string;
   toAddress?: string;
   projectId?: number;
+  /** SAL amount as indexed by the backend. */
+  amount?: number | null;
   tokenAmount?: number;
-  co2Kg?: number;
+  co2Kg?: number | null;
   timestamp?: string;
+  metadata?: Record<string, any> | null;
 }
 
 export interface ProjectMetadataResponse {

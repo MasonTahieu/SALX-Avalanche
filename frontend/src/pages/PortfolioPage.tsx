@@ -1,91 +1,12 @@
-import { useRef, useEffect, useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
 import { WalletButton } from '../components/wallet/WalletButton';
 import { usePortfolioData } from '../components/portfolio/usePortfolioData';
 import { formatDate } from '../lib/format';
-import type { Certificate } from '../types/domain';
 import { CertificatesPage } from './CertificatesPage';
 import { env } from '../config/env';
-
-const MONO = "'JetBrains Mono', monospace";
-const SYNE = "'Syne', sans-serif";
-
-function Reveal({ children, delay = 0 }: { children: ReactNode; delay?: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { el.classList.add('is-visible'); obs.disconnect(); } },
-      { threshold: 0.08 },
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
-  return (
-    <div ref={ref} className="dc-reveal" style={delay ? { animationDelay: `${delay}ms` } : undefined}>
-      {children}
-    </div>
-  );
-}
-
-function StatCard({ label, value, unit, sub, action, onAction, actionColor = 'var(--org)' }: {
-  label: string; value: string | number; unit?: string; sub?: string;
-  action?: string; onAction?: () => void; actionColor?: string;
-}) {
-  return (
-    <div style={{ background: 'var(--surf)', border: '1px solid var(--bd-mid)', borderRadius: 10, padding: 16 }}>
-      <span style={{ display: 'block', fontFamily: MONO, fontSize: 7, letterSpacing: '.13em', textTransform: 'uppercase', color: 'var(--mut)', marginBottom: 10 }}>{label}</span>
-      <div>
-        <strong style={{ fontSize: 22, fontWeight: 700, color: label === 'SAL BALANCE' ? 'var(--g)' : 'var(--ink)', letterSpacing: '-.02em' }}>{value}</strong>
-        {unit && <span style={{ fontFamily: MONO, fontSize: 8, color: 'var(--mut)', marginLeft: 6 }}>{unit}</span>}
-      </div>
-      {sub && <div style={{ fontFamily: MONO, fontSize: 8, color: 'var(--mut)', marginTop: 4 }}>{sub}</div>}
-      {action && onAction && (
-        <button
-          onClick={onAction}
-          style={{ display: 'block', marginTop: 8, fontFamily: MONO, fontSize: 7, letterSpacing: '.08em', textTransform: 'uppercase', background: actionColor, color: '#fff', border: 'none', borderRadius: 4, padding: '4px 8px', cursor: 'pointer' }}
-        >
-          {action}
-        </button>
-      )}
-    </div>
-  );
-}
-
-function SectionLabel({ children, right }: { children: ReactNode; right?: ReactNode }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
-      <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--mut)' }}>{children}</span>
-      {right}
-    </div>
-  );
-}
-
-const TX_COLORS: Record<string, { bg: string; color: string }> = {
-  PURCHASE:  { bg: 'rgba(45,201,34,.12)',   color: 'var(--g)' },
-  SALE:      { bg: 'rgba(231,199,101,.12)', color: 'var(--gold)' },
-  RETIRE:    { bg: 'rgba(232,145,60,.12)',  color: 'var(--org)' },
-  LISTING:   { bg: 'rgba(158,165,168,.1)',  color: 'var(--mut)' },
-  MINT:      { bg: 'rgba(45,201,34,.08)',   color: 'var(--g)' },
-};
-function txStyle(type?: string) {
-  return TX_COLORS[type?.toUpperCase() ?? ''] ?? { bg: 'rgba(158,165,168,.1)', color: 'var(--mut)' };
-}
-
-function CertBadge({ status }: { status: Certificate['status'] }) {
-  const map = {
-    ACTIVE:  { c: 'var(--g)',    bg: 'rgba(45,201,34,.1)',    border: 'rgba(45,201,34,.27)' },
-    REVOKED: { c: '#e05252',     bg: 'rgba(224,82,82,.1)',    border: 'rgba(224,82,82,.27)' },
-    PENDING: { c: 'var(--gold)', bg: 'rgba(231,199,101,.12)', border: 'rgba(231,199,101,.27)' },
-    EXPIRED: { c: 'var(--mut)',  bg: 'rgba(158,165,168,.1)',  border: 'rgba(158,165,168,.2)' },
-  };
-  const s = map[status] ?? map.PENDING;
-  return (
-    <span style={{ fontFamily: MONO, fontSize: 7, letterSpacing: '.1em', padding: '3px 8px', borderRadius: 4, background: s.bg, color: s.c, border: `1px solid ${s.border}` }}>{status}</span>
-  );
-}
+import { CertBadge, MONO, Reveal, SectionLabel, SectionLink, StatCard, StatGrid, SYNE } from '../components/dashboard/DashboardKit';
 
 export function PortfolioPage() {
   const wallet = useWallet();
@@ -162,8 +83,8 @@ export function PortfolioPage() {
 
         {/* Stat cards */}
         <Reveal>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 28 }}>
-            <StatCard label="SAL BALANCE" value={data.totalSAL} unit="SAL" sub={`= ${data.totalSAL * 10} kg CO₂e`} />
+          <StatGrid>
+            <StatCard label="SAL BALANCE" value={data.totalSAL} unit="SAL" sub={`= ${data.totalSAL * 10} kg CO₂e`} accent />
             <StatCard
               label="PROCEEDS"
               value={data.finance?.proceedsETH ?? '0.000'}
@@ -180,7 +101,7 @@ export function PortfolioPage() {
               actionColor='var(--surf2)'
             />
             <StatCard label="CERTIFICATES" value={data.certificates.length} sub="SBT minted" />
-          </div>
+          </StatGrid>
         </Reveal>
 
         {/* Status message */}
@@ -329,7 +250,7 @@ export function PortfolioPage() {
         {data.certificates.length > 0 && (
           <Reveal delay={80}>
             <div style={{ marginBottom: 26 }}>
-              <SectionLabel>RETIREMENT CERTIFICATES (SBT)</SectionLabel>
+              <SectionLabel right={<SectionLink href="/dashboard?tab=certificates" onClick={e => { e.preventDefault(); switchTab('certificates'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>VIEW CERTIFICATES ↗</SectionLink>}>RETIREMENT CERTIFICATES (SBT)</SectionLabel>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 12 }}>
                 {data.certificates.map(cert => (
                   <div key={cert.certificateTokenId} style={{ background: 'var(--surf)', border: '1px solid var(--bd-mid)', borderRadius: 10, padding: '16px 18px' }}>
