@@ -4,6 +4,7 @@ const {
   buildCertificateSvg,
   renderCertificatePng,
   isCurrentArtwork,
+  artworkInputFromCertificate,
   formatTonnes,
 } = require('../services/certificateArtwork');
 
@@ -60,6 +61,27 @@ for (const text of required) {
 assert.ok(!single.includes('NaN') && !single.includes('undefined'), 'certificate SVG has unresolved values');
 assert.ok(isCurrentArtwork(single));
 assert.equal(isCurrentArtwork('<svg><text>Carbon Retirement Certificate</text></svg>'), false);
+
+// A stored certificate minted with the old artwork (shape of certificate #1 on Fuji)
+// is redrawn from its own data: same serial, basket, owner and prepared date.
+const storedLegacy = {
+  certificateTokenId: 1,
+  ownerAddress: owner,
+  retiredTokenAmount: 3,
+  retiredCO2Kg: 30,
+  mintedAt: '2026-11-04T15:28:02.000Z',
+  metadataRequestId: '66430154-6790-4a14-bf65-700ab9e1287a',
+  sources: [{ projectId: 1, projectName: 'E2E Test - Can Gio Mangrove', retiredTokenAmount: 3, retiredCO2Kg: 30 }],
+  metadata: {
+    attributes: [{ trait_type: 'Certificate Serial', value: 'SALX-1P-66430154' }],
+    properties: { prepared_at: new Date(1793806068 * 1000).toISOString() },
+  },
+};
+assert.equal(buildCertificateSvg(artworkInputFromCertificate(storedLegacy)), single, 'redrawn legacy certificate matches');
+// Without a serial attribute, the serial is derived exactly as at mint time.
+const noSerial = { ...storedLegacy, metadata: { properties: storedLegacy.metadata.properties } };
+assert.equal(artworkInputFromCertificate(noSerial).serial, 'SALX-1P-66430154');
+assert.equal(artworkInputFromCertificate({ ...storedLegacy, ownerAddress: null }), null);
 
 // Five-project basket with a long name and a large total still lists every source.
 const sources = [

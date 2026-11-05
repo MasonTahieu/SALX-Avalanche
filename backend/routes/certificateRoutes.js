@@ -4,11 +4,19 @@ const Certificate = require('../Models/Certificate');
 const { createCertificateMetadata } = require('../services/certificateMetadataService');
 const { syncRetirementTransaction } = require('../services/blockchainListener');
 const { ipfsToHttp } = require('../services/ipfsService');
-const { isCurrentArtwork, renderCertificatePng } = require('../services/certificateArtwork');
+const {
+  artworkInputFromCertificate,
+  buildCertificateSvg,
+  isCurrentArtwork,
+  renderCertificatePng,
+} = require('../services/certificateArtwork');
 
 const router = express.Router();
 
+const PREVIEW_WIDTH = 1000;
 const DOWNLOAD_WIDTH = 2000;
+const PNG_CACHE_LIMIT = 48;
+const pngCache = new Map();
 
 const decodeDataUri = (uri, mimeType) => {
   const prefix = `data:${mimeType};base64,`;
@@ -17,22 +25,35 @@ const decodeDataUri = (uri, mimeType) => {
     : null;
 };
 
-// PNG to hand to the holder. Certificates drawn with the current artwork are
-// re-rendered from their own minted SVG at print resolution; older ones get the
-// exact PNG that was minted, so nothing about a past certificate changes.
-const certificateDownloadPng = (certificate) => {
-  const metadata = certificate.metadata || {};
-  const svgBuffer = decodeDataUri(metadata.image_data, 'image/svg+xml');
-  const svg = svgBuffer ? svgBuffer.toString('utf8') : null;
-  if (svg && isCurrentArtwork(svg)) {
-    try {
-      const png = renderCertificatePng(svg, { width: DOWNLOAD_WIDTH });
-      if (png) return png;
-    } catch (error) {
-      console.warn('[cert] high-res render failed, serving minted PNG:', error.message);
-    }
+// Certificate artwork in the current design. Certificates minted with it are
+// rendered from their own minted SVG; older ones are redrawn from their stored
+// data (same serial, basket, owner and date). The on-chain tokenURI is untouched.
+const currentArtworkSvg = (certificate) => {
+  const minted = decodeDataUri(certificate.metadata?.image_data, 'image/svg+xml')?.toString('utf8');
+  if (minted && isCurrentArtwork(minted)) return minted;
+  const input = artworkInputFromCertificate(certificate);
+  return input ? buildCertificateSvg(input) : null;
+};
+
+const certificatePng = (certificate, width) => {
+  const key = `${certificate.certificateContractAddress}:${certificate.certificateTokenId}:${width}`;
+  if (pngCache.has(key)) return pngCache.get(key);
+
+  let png = null;
+  try {
+    const svg = currentArtworkSvg(certificate);
+    png = svg ? renderCertificatePng(svg, { width }) : null;
+  } catch (error) {
+    console.warn('[cert] artwork render failed, serving minted PNG:', error.message);
   }
-  return decodeDataUri(metadata.image, 'image/png') || decodeDataUri(certificate.imageURI, 'image/png');
+  if (!png) {
+    // Last resort: the PNG that was minted.
+    return decodeDataUri(certificate.metadata?.image, 'image/png') || decodeDataUri(certificate.imageURI, 'image/png');
+  }
+
+  if (pngCache.size >= PNG_CACHE_LIMIT) pngCache.delete(pngCache.keys().next().value);
+  pngCache.set(key, png);
+  return png;
 };
 
 const downloadFilename = (certificate) => {
@@ -189,7 +210,7 @@ router.get('/token/:tokenId', async (req, res) => {
   }
 });
 
-// Tải ảnh chứng chỉ (PNG) về máy.
+// Ảnh chứng chỉ (PNG): mặc định hiển thị 1000 px; ?download=1 tải về bản 2000 px.
 router.get('/token/:tokenId/image.png', async (req, res) => {
   try {
     const tokenId = Number(req.params.tokenId);
@@ -207,7 +228,8 @@ router.get('/token/:tokenId/image.png', async (req, res) => {
       return res.status(404).json({ error: 'Không tìm thấy chứng chỉ' });
     }
 
-    const png = certificateDownloadPng(certificate);
+    const download = req.query.download === '1' || req.query.download === 'true';
+    const png = certificatePng(certificate, download ? DOWNLOAD_WIDTH : PREVIEW_WIDTH);
     if (!png) {
       return res.status(404).json({ error: 'Chứng chỉ chưa có ảnh để tải' });
     }
@@ -215,9 +237,8 @@ router.get('/token/:tokenId/image.png', async (req, res) => {
     res.set({
       'Content-Type': 'image/png',
       'Content-Length': String(png.length),
-      'Content-Disposition': `attachment; filename="${downloadFilename(certificate)}"`,
-      // The artwork of a minted certificate never changes.
-      'Cache-Control': 'public, max-age=86400, immutable',
+      'Content-Disposition': `${download ? 'attachment' : 'inline'}; filename="${downloadFilename(certificate)}"`,
+      'Cache-Control': 'public, max-age=3600',
     });
     res.status(200).send(png);
   } catch (error) {

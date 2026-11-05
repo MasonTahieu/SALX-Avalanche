@@ -306,6 +306,48 @@ const buildCertificateSvg = ({ sources, ownerAddress, retiredTokenAmount, retire
 
 const isCurrentArtwork = (svg) => typeof svg === 'string' && svg.includes(ARTWORK_VERSION);
 
+// Artwork input rebuilt from a stored Certificate document, using the values
+// that were minted (serial, prepared date, basket), so certificates issued
+// before this artwork can be shown in it without changing their content.
+const artworkInputFromCertificate = (certificate) => {
+  if (!certificate?.ownerAddress) return null;
+  const metadata = certificate.metadata || {};
+  const properties = metadata.properties || {};
+
+  const rawSources = Array.isArray(certificate.sources) && certificate.sources.length
+    ? certificate.sources
+    : [{
+        projectId: certificate.projectId,
+        projectName: certificate.projectName,
+        retiredTokenAmount: certificate.retiredTokenAmount,
+        retiredCO2Kg: certificate.retiredCO2Kg,
+      }];
+  const sources = rawSources
+    .filter((source) => Number(source?.projectId) > 0)
+    .map((source) => ({
+      projectId: Number(source.projectId),
+      projectName: source.projectName || `Project #${source.projectId}`,
+      retiredTokenAmount: Number(source.retiredTokenAmount) || 0,
+      retiredCO2Kg: Number(source.retiredCO2Kg) || 0,
+    }));
+  if (!sources.length) return null;
+
+  const requestId = certificate.metadataRequestId || properties.metadata_request_id;
+  const serial = (metadata.attributes || []).find((attribute) => attribute.trait_type === 'Certificate Serial')?.value
+    || (requestId ? `SALX-${sources.length}P-${String(requestId).slice(0, 8).toUpperCase()}` : `SBT-${certificate.certificateTokenId}`);
+
+  const issuedAt = new Date(properties.prepared_at || certificate.mintedAt || certificate.createdAt || Date.now());
+
+  return {
+    sources,
+    ownerAddress: String(certificate.ownerAddress).toLowerCase(),
+    retiredTokenAmount: Number(certificate.retiredTokenAmount) || sources.reduce((sum, s) => sum + s.retiredTokenAmount, 0),
+    retiredCO2Kg: Number(certificate.retiredCO2Kg) || sources.reduce((sum, s) => sum + s.retiredCO2Kg, 0),
+    issuedAt: Number.isNaN(issuedAt.getTime()) ? new Date() : issuedAt,
+    serial: String(serial),
+  };
+};
+
 // Rasterise certificate SVG to PNG at the given pixel width; null if resvg is missing.
 const renderCertificatePng = (svg, { width = SIZE } = {}) => {
   const resvg = loadResvg();
@@ -322,5 +364,6 @@ module.exports = {
   buildCertificateSvg,
   renderCertificatePng,
   isCurrentArtwork,
+  artworkInputFromCertificate,
   formatTonnes,
 };
