@@ -90,6 +90,10 @@ export function CertificateCard({ certificate, project }: { certificate: Certifi
   const issuerWallet = env.sal1155Address;
   const explorerBase = env.blockExplorerUrl;
   const beneficiaryWalletLink = `${explorerBase}/address/${certificate.ownerAddress}`;
+  // The API answers with Content-Disposition: attachment, so a plain link downloads the PNG.
+  const downloadUrl = certificate.certificateTokenId
+    ? `${env.apiUrl}/api/certificates/token/${certificate.certificateTokenId}/image.png`
+    : null;
   const issuerWalletLink = issuerWallet ? `${explorerBase}/address/${issuerWallet}` : undefined;
 
   const copyUrl = () => {
@@ -211,6 +215,15 @@ export function CertificateCard({ certificate, project }: { certificate: Certifi
           Verification is permanently recorded on the Avalanche blockchain.
         </p>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          {downloadUrl && (
+            <a
+              href={downloadUrl}
+              download
+              style={{ fontFamily: INTER, fontSize: 12, fontWeight: 600, color: 'var(--bg)', border: '1px solid var(--g)', borderRadius: 6, padding: '7px 14px', textDecoration: 'none', background: 'var(--g)' }}
+            >
+              Download certificate (PNG)
+            </a>
+          )}
           {certificate.explorerURL && (
             <a
               href={certificate.explorerURL}

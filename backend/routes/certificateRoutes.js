@@ -4,8 +4,43 @@ const Certificate = require('../Models/Certificate');
 const { createCertificateMetadata } = require('../services/certificateMetadataService');
 const { syncRetirementTransaction } = require('../services/blockchainListener');
 const { ipfsToHttp } = require('../services/ipfsService');
+const { isCurrentArtwork, renderCertificatePng } = require('../services/certificateArtwork');
 
 const router = express.Router();
+
+const DOWNLOAD_WIDTH = 2000;
+
+const decodeDataUri = (uri, mimeType) => {
+  const prefix = `data:${mimeType};base64,`;
+  return typeof uri === 'string' && uri.startsWith(prefix)
+    ? Buffer.from(uri.slice(prefix.length), 'base64')
+    : null;
+};
+
+// PNG to hand to the holder. Certificates drawn with the current artwork are
+// re-rendered from their own minted SVG at print resolution; older ones get the
+// exact PNG that was minted, so nothing about a past certificate changes.
+const certificateDownloadPng = (certificate) => {
+  const metadata = certificate.metadata || {};
+  const svgBuffer = decodeDataUri(metadata.image_data, 'image/svg+xml');
+  const svg = svgBuffer ? svgBuffer.toString('utf8') : null;
+  if (svg && isCurrentArtwork(svg)) {
+    try {
+      const png = renderCertificatePng(svg, { width: DOWNLOAD_WIDTH });
+      if (png) return png;
+    } catch (error) {
+      console.warn('[cert] high-res render failed, serving minted PNG:', error.message);
+    }
+  }
+  return decodeDataUri(metadata.image, 'image/png') || decodeDataUri(certificate.imageURI, 'image/png');
+};
+
+const downloadFilename = (certificate) => {
+  const serial = (certificate.metadata?.attributes || [])
+    .find((attribute) => attribute.trait_type === 'Certificate Serial')?.value;
+  const label = String(serial || `SBT-${certificate.certificateTokenId}`).replace(/[^A-Za-z0-9-]/g, '');
+  return `SALX-Certificate-${label}.png`;
+};
 
 const serializeCertificate = (certificate) => {
   const data = certificate?.toObject ? certificate.toObject() : certificate;
@@ -151,6 +186,43 @@ router.get('/token/:tokenId', async (req, res) => {
   } catch (error) {
     console.error('❌ Lỗi truy xuất chứng chỉ:', error.message);
     res.status(500).json({ error: 'Không thể tải chứng chỉ' });
+  }
+});
+
+// Tải ảnh chứng chỉ (PNG) về máy.
+router.get('/token/:tokenId/image.png', async (req, res) => {
+  try {
+    const tokenId = Number(req.params.tokenId);
+    if (!Number.isSafeInteger(tokenId) || tokenId <= 0) {
+      return res.status(400).json({ error: 'Token ID không hợp lệ' });
+    }
+
+    const certificate = await Certificate.findOne({
+      chainId: Number(process.env.CHAIN_ID || 43113),
+      certificateContractAddress: process.env.GREEN_CERTIFICATE_SBT_ADDRESS?.toLowerCase(),
+      certificateTokenId: tokenId,
+    }).lean();
+
+    if (!certificate) {
+      return res.status(404).json({ error: 'Không tìm thấy chứng chỉ' });
+    }
+
+    const png = certificateDownloadPng(certificate);
+    if (!png) {
+      return res.status(404).json({ error: 'Chứng chỉ chưa có ảnh để tải' });
+    }
+
+    res.set({
+      'Content-Type': 'image/png',
+      'Content-Length': String(png.length),
+      'Content-Disposition': `attachment; filename="${downloadFilename(certificate)}"`,
+      // The artwork of a minted certificate never changes.
+      'Cache-Control': 'public, max-age=86400, immutable',
+    });
+    res.status(200).send(png);
+  } catch (error) {
+    console.error('❌ Lỗi tải ảnh chứng chỉ:', error.message);
+    res.status(500).json({ error: 'Không thể tải ảnh chứng chỉ' });
   }
 });
 
