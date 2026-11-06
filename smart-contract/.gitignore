@@ -8,6 +8,8 @@ typechain-types/
 # Other chains (local test runs) stay ignored.
 ignition/deployments/*
 !ignition/deployments/chain-43113/
+# "artifacts/" above would also drop its deployed ABIs.
+!ignition/deployments/chain-43113/artifacts/
 .env
 .env.*
 !.env.example
