@@ -3,7 +3,11 @@ artifacts/
 cache/
 coverage/
 typechain-types/
-ignition/deployments/
+# Deploy records: keep the live Fuji deployment (addresses, journal, ABIs,
+# build-info; all public on-chain) so it is backed up and verifiable.
+# Other chains (local test runs) stay ignored.
+ignition/deployments/*
+!ignition/deployments/chain-43113/
 .env
 .env.*
 !.env.example
