@@ -16,14 +16,16 @@ export function LeaderboardHero({ totalRetiredKg, entryCount }: Props) {
         <span style={{ fontFamily: MONO, fontSize: 8, letterSpacing: '.14em', color: 'var(--g)' }}>FY 2026</span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.2fr) minmax(240px,.7fr)', gap: 40, marginTop: 28, alignItems: 'end' }}>
-        <h1 style={{ fontFamily: SYNE, fontWeight: 800, fontSize: 'clamp(48px,6.2vw,70px)', lineHeight: .88, letterSpacing: '-.02em', margin: 0, color: 'var(--g)' }}>
+      {/* Heading beside the stats when there is room; stacked on phones. The
+          10.6cqi cap keeps the widest word ("LEADERS,") inside a 320–450 px screen. */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '28px 40px', marginTop: 28, alignItems: 'flex-end' }}>
+        <h1 style={{ flex: '1.2 1 360px', minWidth: 0, fontFamily: SYNE, fontWeight: 800, fontSize: 'min(clamp(48px,6.2vw,70px),10.6cqi)', lineHeight: .88, letterSpacing: '-.02em', margin: 0, color: 'var(--g)' }}>
           GREEN LEADERS,<br />
-          <span style={{ color: 'var(--ink)', fontSize: 70 }}>ON-CHAIN.</span>
+          <span style={{ color: 'var(--ink)', fontSize: 'min(70px,10.6cqi)' }}>ON-CHAIN.</span>
         </h1>
 
         {entryCount > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ flex: '.7 1 240px', display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--surf)', border: '1px solid var(--bd-soft)', borderRadius: 10, padding: '12px 16px' }}>
               <span style={{ fontFamily: MONO, fontSize: 7, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--mut)', marginBottom: 6 }}>PARTICIPANTS</span>
               <strong style={{ fontFamily: MONO, fontSize: 22, color: 'var(--ink)', fontWeight: 700 }}>{entryCount}</strong>

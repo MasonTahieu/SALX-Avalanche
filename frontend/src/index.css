@@ -160,3 +160,7 @@ button,input,textarea,select{font:inherit;color:inherit} a{color:inherit;text-de
 .market-dc-skeleton-line{height:12px;border-radius:6px;background:linear-gradient(90deg,var(--surf) 25%,var(--surf2) 50%,var(--surf) 75%);background-size:200% 100%;animation:market-shimmer 1.4s infinite}
 @media(max-width:900px){.market-dc-layout{grid-template-columns:1fr}.market-dc-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:580px){.market-dc-grid{grid-template-columns:1fr}}
+
+/* Retire page: terminal panel + summary. Stacks on phones and small tablets. */
+.retire-layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:14px;align-items:stretch}
+@media (max-width:759.98px){.retire-layout{grid-template-columns:minmax(0,1fr)}}

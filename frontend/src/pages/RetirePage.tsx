@@ -84,7 +84,8 @@ export function RetirePage() {
   return (
     <div className="home-dc" style={{ animation: 'fadeUp .35s ease' }}>
       <div className="home-dc-section" style={{ maxWidth: 1060, margin: '0 auto', padding: '38px 34px 55px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '300px minmax(0,1fr)', gap: 14, alignItems: 'stretch' }}>
+        {/* Terminal beside the summary on wide screens, stacked below 760px (index.css). */}
+        <div className="retire-layout">
 
           {/* ── Terminal panel (left) ── */}
           <section style={{ background: 'var(--surf)', border: '1px solid var(--bd-str)', borderRadius: 12, padding: 18, display: 'flex', flexDirection: 'column' }}>
