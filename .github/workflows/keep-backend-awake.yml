@@ -1,0 +1,27 @@
+name: Keep backend awake
+
+# Render's free instance sleeps after 15 minutes without traffic. A sleeping
+# backend makes the first visitor wait about a minute, and the blockchain
+# indexer inside it stops until someone wakes it. A ping every 10 minutes
+# keeps it running. One always-on service uses about 744 of the 750 free
+# instance hours Render gives a workspace each month.
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping the liveness endpoint
+        env:
+          API_URL: https://salx-avalanche-api.onrender.com
+        run: |
+          # A sleeping instance can take about a minute to answer the first request.
+          curl --fail --silent --show-error --max-time 120 --retry 3 --retry-delay 10 \
+            "$API_URL/api/health/live"
