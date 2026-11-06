@@ -1,4 +1,4 @@
-import { formatNumber } from '../../lib/format';
+import { formatCO2 } from '../../lib/format';
 
 const MONO = "'JetBrains Mono', monospace";
 const SYNE = "'Syne', sans-serif";
@@ -32,7 +32,7 @@ export function LeaderboardHero({ totalRetiredKg, entryCount }: Props) {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--surf)', border: '1px solid var(--bd-soft)', borderRadius: 10, padding: '12px 16px' }}>
               <span style={{ fontFamily: MONO, fontSize: 7, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--mut)', marginBottom: 6 }}>TOTAL RETIRED</span>
-              <strong style={{ fontFamily: MONO, fontSize: 22, color: 'var(--g)', fontWeight: 700 }}>{formatNumber(totalRetiredKg / 1000, 1)} tCO₂e</strong>
+              <strong style={{ fontFamily: MONO, fontSize: 22, color: 'var(--g)', fontWeight: 700 }}>{formatCO2(totalRetiredKg)}</strong>
             </div>
           </div>
         )}
