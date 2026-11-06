@@ -26,10 +26,13 @@ export function MarketplacePage() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const { pending, updatePending, active, apply, clear } = useMarketFilters();
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  // Skeletons only on the first load or a retry. A refresh after a purchase
+  // (refresh = true) keeps the current cards on screen and swaps the data in.
+  const load = useCallback(async (refresh = false) => {
+    if (!refresh) setLoading(true);
     try {
       const [listingRows, projectRows] = await Promise.all([
         backend.listings({ active: true }),
@@ -37,12 +40,17 @@ export function MarketplacePage() {
       ]);
       setListings(listingRows);
       setProjects(projectRows);
+      setLoadError(false);
+    } catch {
+      // A failed background refresh keeps the cards already shown.
+      if (!refresh) setLoadError(true);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  const refresh = useCallback(() => load(true), [load]);
 
   // O(1) project lookup by onChainProjectId
   const projectMap = useMemo(
@@ -94,6 +102,17 @@ export function MarketplacePage() {
               <div className="market-dc-grid">
                 {Array.from({ length: SKELETON_COUNT }, (_, i) => <DcCardSkeleton key={i} />)}
               </div>
+            ) : loadError ? (
+              <div style={{ padding: '60px 0', textAlign: 'center', fontFamily: MONO, fontSize: 10, color: 'var(--mut)', letterSpacing: '.08em' }}>
+                <div>COULD NOT LOAD THE MARKETPLACE. THE SERVER MAY BE STARTING.</div>
+                <button
+                  type="button"
+                  onClick={() => load()}
+                  style={{ marginTop: 16, fontFamily: MONO, fontSize: 10, letterSpacing: '.08em', padding: '9px 16px', borderRadius: 6, border: '1px solid var(--bd-str)', background: 'transparent', color: 'var(--ink)', cursor: 'pointer' }}
+                >
+                  TRY AGAIN
+                </button>
+              </div>
             ) : filtered.length === 0 ? (
               <div style={{ padding: '60px 0', textAlign: 'center', fontFamily: MONO, fontSize: 10, color: 'var(--mut)', letterSpacing: '.08em' }}>
                 NO PROJECTS MATCH YOUR FILTERS
@@ -105,7 +124,7 @@ export function MarketplacePage() {
                     key={listing.listingId}
                     listing={listing}
                     project={projectMap.get(listing.projectId)}
-                    onChanged={load}
+                    onChanged={refresh}
                   />
                 ))}
               </div>

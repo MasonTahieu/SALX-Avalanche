@@ -10,12 +10,13 @@ const SYNE = "'Syne', sans-serif";
 
 export function LeaderboardPage() {
   const [rows, setRows] = useState<LeaderRow[]>([]);
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
 
   useEffect(() => {
     backend
       .leaderboard()
-      .then((d: any) => setRows(Array.isArray(d) ? d : (d?.leaderboard ?? [])))
-      .catch(() => setRows([]));
+      .then((d: any) => { setRows(Array.isArray(d) ? d : (d?.leaderboard ?? [])); setStatus('ready'); })
+      .catch(() => { setRows([]); setStatus('error'); });
   }, []);
 
   const totalKg = rows.reduce(
@@ -43,7 +44,7 @@ export function LeaderboardPage() {
 
           {rows.length === 0 ? (
             <div style={{ padding: '28px 12px', fontFamily: MONO, fontSize: 10, color: 'var(--mut)', letterSpacing: '.08em', textAlign: 'center' }}>
-              NO DATA YET.
+              {status === 'loading' ? 'LOADING…' : status === 'error' ? 'COULD NOT LOAD THE LEADERBOARD. RELOAD IN A MINUTE.' : 'NO DATA YET.'}
             </div>
           ) : (
             rows.map((r, i) => {
