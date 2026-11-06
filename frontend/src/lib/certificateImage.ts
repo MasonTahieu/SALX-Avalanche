@@ -10,7 +10,7 @@ export type CertificateImageVariant = 'preview' | 'thumb' | 'download';
 /**
  * PNG of an SBT certificate rendered by the backend.
  * - preview: 1000 px, shown inline
- * - thumb: 320 px, for the collection strip
+ * - thumb: 168 px, for the collection strip (shown at 56 px)
  * - download: 2000 px, served as an attachment
  */
 export function certificateImageUrl(tokenId: number, variant: CertificateImageVariant = 'preview') {

@@ -13,7 +13,8 @@ const {
 
 const router = express.Router();
 
-const THUMB_WIDTH = 320;
+// The collection strip shows thumbnails at 56 px; 168 px covers 3x screens.
+const THUMB_WIDTH = 168;
 const PREVIEW_WIDTH = 1000;
 const DOWNLOAD_WIDTH = 2000;
 const PNG_CACHE_LIMIT = 48;
@@ -211,7 +212,7 @@ router.get('/token/:tokenId', async (req, res) => {
   }
 });
 
-// Ảnh chứng chỉ (PNG): mặc định 1000 px; ?size=thumb 320 px; ?download=1 tải về bản 2000 px.
+// Ảnh chứng chỉ (PNG): mặc định 1000 px; ?size=thumb 168 px; ?download=1 tải về bản 2000 px.
 router.get('/token/:tokenId/image.png', async (req, res) => {
   try {
     const tokenId = Number(req.params.tokenId);
