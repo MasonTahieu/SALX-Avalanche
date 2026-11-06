@@ -1,6 +1,10 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { env } from '../config/env';
+import { backend } from '../services/backend';
+import { projectDisplay } from '../lib/projectMeta';
+import { certBadge } from '../components/marketplace/certBadge';
+import type { Listing, Project } from '../types/domain';
 
 function Reveal({ children, delay = 0 }: { children: ReactNode; delay?: number }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -32,38 +36,62 @@ interface EditionCard {
   artBg: string;
 }
 
-const EDITIONS: EditionCard[] = [
-  {
-    id: 'SAL-0001',
-    title: 'Cần Giờ Mangrove Forest',
-    meta: 'ID: 1 | Ho Chi Minh City',
-    price: `0.020 ${env.nativeSymbol}/SAL`,
-    badge: 'VCS VERIFIED',
-    badgeBg: '#2dc922',
-    badgeColor: '#08150e',
-    artBg: 'linear-gradient(155deg,#0a1c13 0%,#162a1c 100%)',
-  },
-  {
-    id: 'SAL-0002',
-    title: 'Bạc Liêu Wind Power',
-    meta: 'ID: 2 | Bạc Liêu, Vietnam',
-    price: `0.015 ${env.nativeSymbol}/SAL`,
-    badge: 'VCS VERIFIED',
-    badgeBg: '#2dc922',
-    badgeColor: '#08150e',
-    artBg: 'linear-gradient(155deg,#0c1e22 0%,#0e2830 100%)',
-  },
-  {
-    id: 'SAL-0003',
-    title: 'Bình Dương Rooftop Solar',
-    meta: 'ID: 3 | Bình Dương',
-    price: `0.010 ${env.nativeSymbol}/SAL`,
-    badge: 'GOLD STANDARD',
-    badgeBg: '#e7c765',
-    badgeColor: '#3a2c05',
-    artBg: 'linear-gradient(155deg,#1e1c0a 0%,#28260e 100%)',
-  },
+// Card art, picked by project ID so each project keeps the same colour.
+const ART_BACKGROUNDS = [
+  'linear-gradient(155deg,#0a1c13 0%,#162a1c 100%)',
+  'linear-gradient(155deg,#0c1e22 0%,#0e2830 100%)',
+  'linear-gradient(155deg,#1e1c0a 0%,#28260e 100%)',
 ];
+const MAX_EDITIONS = 6;
+
+// One card per approved, non-blacklisted project that has SAL on sale, at its
+// cheapest active listing. Same data and badge as the marketplace.
+function buildEditions(listings: Listing[], projects: Project[]): EditionCard[] {
+  const projectsById = new Map<number, Project>();
+  for (const project of projects) {
+    if (project.onChainProjectId != null && !project.blacklisted) projectsById.set(project.onChainProjectId, project);
+  }
+  const cheapest = new Map<number, Listing>();
+  for (const listing of listings) {
+    if (!listing.active || listing.remainingAmount <= 0 || !projectsById.has(listing.projectId)) continue;
+    const current = cheapest.get(listing.projectId);
+    if (!current || Number(listing.pricePerUnitETH) < Number(current.pricePerUnitETH)) cheapest.set(listing.projectId, listing);
+  }
+  return [...cheapest.values()]
+    .sort((a, b) => a.projectId - b.projectId)
+    .slice(0, MAX_EDITIONS)
+    .map(listing => {
+      const project = projectsById.get(listing.projectId)!;
+      const details = projectDisplay(project);
+      const badge = certBadge(details.methodology);
+      return {
+        id: `SAL-${String(listing.projectId).padStart(4, '0')}`,
+        title: project.projectName || `SAL Project #${listing.projectId}`,
+        meta: [`ID: ${listing.projectId}`, details.location].filter(Boolean).join(' | '),
+        price: `${listing.pricePerUnitETH} ${env.nativeSymbol}/SAL`,
+        badge: badge.label,
+        badgeBg: badge.bg,
+        badgeColor: badge.color,
+        artBg: ART_BACKGROUNDS[listing.projectId % ART_BACKGROUNDS.length],
+      };
+    });
+}
+
+type EditionsState = { status: 'loading' | 'ready' | 'error'; editions: EditionCard[] };
+
+function useEditions(): EditionsState {
+  const [state, setState] = useState<EditionsState>({ status: 'loading', editions: [] });
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([backend.listings({ active: true }), backend.projects('approved')])
+      .then(([listings, projects]) => { if (!cancelled) setState({ status: 'ready', editions: buildEditions(listings, projects) }); })
+      .catch(() => { if (!cancelled) setState({ status: 'error', editions: [] }); });
+    return () => { cancelled = true; };
+  }, []);
+  return state;
+}
+
+const EDITION_CARD_STYLE = { flex: '0 0 calc((100% - 36px)/3)', minWidth: 250, scrollSnapAlign: 'start' } as const;
 
 const MONO = "'JetBrains Mono', monospace";
 const SYNE = "'Syne', sans-serif";
@@ -81,6 +109,7 @@ function MetaItem({ label, value, valueColor }: { label: string; value: string; 
 
 export function HomePage() {
   const navigate = useNavigate();
+  const editions = useEditions();
   const heroBoxRef = useRef<HTMLDivElement>(null);
   const heroSRef = useRef<HTMLSpanElement>(null);
   const heroAlRef = useRef<HTMLSpanElement>(null);
@@ -207,11 +236,18 @@ export function HomePage() {
             </span>
           </div>
           <div className="home-dc-scroller" style={{ display: 'flex', gap: 18, overflowX: 'auto', scrollSnapType: 'x mandatory', paddingBottom: 14, scrollbarWidth: 'none' }}>
-            {EDITIONS.map(ed => (
+            {editions.status === 'loading' && Array.from({ length: 3 }, (_, i) => (
+              <div key={i} aria-hidden="true" style={EDITION_CARD_STYLE}>
+                <div className="market-dc-skeleton-line" style={{ height: 'auto', aspectRatio: '1.18/1', borderRadius: 12 }} />
+                <div className="market-dc-skeleton-line" style={{ width: '70%', marginTop: 14 }} />
+                <div className="market-dc-skeleton-line" style={{ width: '45%', marginTop: 8 }} />
+              </div>
+            ))}
+            {editions.editions.map(ed => (
               <article
                 key={ed.id}
                 className="home-dc-card"
-                style={{ flex: '0 0 calc((100% - 36px)/3)', minWidth: 250, scrollSnapAlign: 'start', cursor: 'pointer' }}
+                style={{ ...EDITION_CARD_STYLE, cursor: 'pointer' }}
               >
                 <div style={{ position: 'relative', aspectRatio: '1.18/1', background: ed.artBg, overflow: 'hidden', borderRadius: 12 }}>
                   <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,transparent 34%,rgba(5,6,5,.88) 100%)' }} />
@@ -240,6 +276,29 @@ export function HomePage() {
                 </button>
               </article>
             ))}
+            {/* Closing card: invites new projects, or explains an empty or failed load. */}
+            {editions.status !== 'loading' && (
+              <article className="home-dc-card" style={EDITION_CARD_STYLE}>
+                <div style={{ aspectRatio: '1.18/1', borderRadius: 12, border: '1px dashed var(--bd-str)', display: 'grid', placeItems: 'center', padding: 20, textAlign: 'center' }}>
+                  <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--mut)' }}>
+                    {editions.status === 'error' ? 'EDITIONS COULD NOT LOAD' : editions.editions.length === 0 ? 'NO EDITIONS ON SALE YET' : 'YOUR PROJECT HERE'}
+                  </span>
+                </div>
+                <h3 style={{ fontFamily: SYNE, fontSize: 15, letterSpacing: '-.01em', margin: '12px 0 4px', color: 'var(--ink)', fontWeight: 700 }}>
+                  {editions.status === 'error' ? 'Browse the marketplace' : 'List your carbon project'}
+                </h3>
+                <p style={{ fontFamily: MONO, fontSize: 9, letterSpacing: '.08em', color: 'var(--mut)', margin: '0 0 9px' }}>
+                  {editions.status === 'error' ? 'The server may be starting. Try the marketplace.' : 'Submit MRV evidence for validator approval.'}
+                </p>
+                <button
+                  className="home-dc-btn"
+                  onClick={() => navigate(editions.status === 'error' ? '/marketplace' : '/submit')}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: MONO, fontSize: 8, letterSpacing: '.12em', textTransform: 'uppercase', marginTop: 11, background: 'none', border: 'none', color: 'var(--mut)', cursor: 'pointer', padding: 0 }}
+                >
+                  {editions.status === 'error' ? 'OPEN MARKETPLACE ↗' : 'SUBMIT A PROJECT ↗'}
+                </button>
+              </article>
+            )}
           </div>
         </section>
       </Reveal>

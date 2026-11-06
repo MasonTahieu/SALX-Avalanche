@@ -2,17 +2,10 @@ import type { Listing, Project } from '../../types/domain';
 import { projectDisplay } from '../../lib/projectMeta';
 import { useBuyListing } from './useBuyListing';
 import { env } from '../../config/env';
+import { certBadge } from './certBadge';
 
 const MONO = "'IBM Plex Mono', 'JetBrains Mono', monospace";
 const SYNE = "'Syne', sans-serif";
-
-interface CertBadge { label: string; bg: string; color: string }
-
-function certBadge(methodology: string): CertBadge {
-  return methodology.toLowerCase().includes('gold')
-    ? { label: 'GOLD STANDARD', bg: '#e7c765', color: '#3a2c05' }
-    : { label: 'VCS VERIFIED', bg: '#2dc922', color: '#08150e' };
-}
 
 export interface MarketDcCardProps {
   listing: Listing;
