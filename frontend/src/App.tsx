@@ -1,20 +1,55 @@
-import { lazy } from 'react';
+import { lazy, useEffect } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from './components/layout/AppShell';
 import { HomePage } from './pages/HomePage';
 
 // The landing page ships in the main bundle; every other page is its own
 // chunk, fetched the first time its route is opened.
-const MarketplacePage = lazy(() => import('./pages/MarketplacePage').then(m => ({ default: m.MarketplacePage })));
-const SubmitProjectPage = lazy(() => import('./pages/SubmitProjectPage').then(m => ({ default: m.SubmitProjectPage })));
-const PortfolioPage = lazy(() => import('./pages/PortfolioPage').then(m => ({ default: m.PortfolioPage })));
-const AdminPage = lazy(() => import('./pages/AdminPage').then(m => ({ default: m.AdminPage })));
-const RetirePage = lazy(() => import('./pages/RetirePage').then(m => ({ default: m.RetirePage })));
-const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage').then(m => ({ default: m.LeaderboardPage })));
-const ValidatorPage = lazy(() => import('./pages/ValidatorPage').then(m => ({ default: m.ValidatorPage })));
-const ActivityPage = lazy(() => import('./pages/ActivityPage').then(m => ({ default: m.ActivityPage })));
+const loadMarketplace = () => import('./pages/MarketplacePage');
+const loadSubmit = () => import('./pages/SubmitProjectPage');
+const loadPortfolio = () => import('./pages/PortfolioPage');
+const loadAdmin = () => import('./pages/AdminPage');
+const loadRetire = () => import('./pages/RetirePage');
+const loadLeaderboard = () => import('./pages/LeaderboardPage');
+const loadValidator = () => import('./pages/ValidatorPage');
+const loadActivity = () => import('./pages/ActivityPage');
+
+const MarketplacePage = lazy(() => loadMarketplace().then(m => ({ default: m.MarketplacePage })));
+const SubmitProjectPage = lazy(() => loadSubmit().then(m => ({ default: m.SubmitProjectPage })));
+const PortfolioPage = lazy(() => loadPortfolio().then(m => ({ default: m.PortfolioPage })));
+const AdminPage = lazy(() => loadAdmin().then(m => ({ default: m.AdminPage })));
+const RetirePage = lazy(() => loadRetire().then(m => ({ default: m.RetirePage })));
+const LeaderboardPage = lazy(() => loadLeaderboard().then(m => ({ default: m.LeaderboardPage })));
+const ValidatorPage = lazy(() => loadValidator().then(m => ({ default: m.ValidatorPage })));
+const ActivityPage = lazy(() => loadActivity().then(m => ({ default: m.ActivityPage })));
+
+// Pages in the main navigation, fetched in the background once the first page
+// has settled, so opening them later shows no blank loading gap.
+const PREFETCH = [loadMarketplace, loadRetire, loadPortfolio, loadLeaderboard, loadSubmit];
+
+function usePrefetchPages() {
+  useEffect(() => {
+    // Respect data-saver and very slow connections.
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+    if (connection?.saveData || /(^|-)2g$/.test(connection?.effectiveType ?? '')) return;
+
+    let cancelled = false;
+    const prefetch = () => {
+      if (cancelled) return;
+      PREFETCH.forEach(load => { load().catch(() => {}); });
+    };
+    const idle = window.requestIdleCallback?.bind(window);
+    const timer = window.setTimeout(() => {
+      if (idle) idle(prefetch, { timeout: 3000 });
+      else prefetch();
+    }, 1500);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, []);
+}
 
 export default function App() {
+  usePrefetchPages();
+
   return <Routes>
     <Route element={<AppShell />}>
       <Route path="/"            element={<HomePage />} />

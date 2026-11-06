@@ -5,6 +5,9 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   build: {
+    // Hashed build output gets its own folder, separate from the unhashed
+    // images in public/assets, so vercel.json can cache it for a year.
+    assetsDir: 'static',
     rollupOptions: {
       output: {
         // React rarely changes between deploys; a separate chunk stays cached

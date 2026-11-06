@@ -5,6 +5,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { env } from '../../config/env';
 import { NETWORKS, networkById } from '../../config/networks';
 import type { WalletKind } from '../../services/blockchain';
+import { useServerWaking } from '../../services/serverStatus';
 import './AppShell.css';
 
 const MONO = "'JetBrains Mono', monospace";
@@ -42,6 +43,7 @@ function shortAddr(addr: string): string {
 
 export function AppShell() {
   const wallet = useWallet();
+  const serverWaking = useServerWaking();
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
@@ -149,7 +151,9 @@ export function AppShell() {
         {/* Col 1 — Logo */}
         <NavLink to="/" style={{ display: 'flex', alignItems: 'center', lineHeight: 0 }}>
           <img
-            src="/assets/salx-wordmark-dark.png"
+            src="/assets/salx-wordmark-dark-240.webp"
+            width={240}
+            height={97}
             alt="SALX"
             style={{ height: 26, width: 'auto', maxWidth: 'none', filter: 'var(--logo-filter)' }}
           />
@@ -342,6 +346,19 @@ export function AppShell() {
         </Suspense>
       </main>
 
+      {/* Shown only while an API request waits on a sleeping (free-tier) server. */}
+      <div className="server-waking" role="status" aria-live="polite">
+        {serverWaking && (
+          <div className="server-waking__toast">
+            <span className="server-waking__dot" aria-hidden="true" />
+            <span>
+              <strong>Starting the SALX server…</strong>
+              <span className="server-waking__sub">It sleeps when idle on free hosting. The first load can take up to a minute.</span>
+            </span>
+          </div>
+        )}
+      </div>
+
       {/* ── Connect Wallet Modal ── */}
       {wallet.modalOpen && (
         <div
@@ -376,7 +393,9 @@ export function AppShell() {
             {/* Wordmark */}
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
               <img
-                src="/assets/salx-wordmark-dark.png"
+                src="/assets/salx-wordmark-dark-240.webp"
+                width={240}
+                height={97}
                 alt="SALX"
                 style={{ height: 28, width: 'auto', display: 'inline-block', filter: 'var(--logo-filter)' }}
               />

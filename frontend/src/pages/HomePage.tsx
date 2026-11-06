@@ -86,9 +86,17 @@ export function HomePage() {
   const heroAlRef = useRef<HTMLSpanElement>(null);
 
   // Split "SAL" → "S" drifts left, "AL" drifts right on scroll
+  // Styles are written at most once per frame, and not at all once the hero is
+  // fully scrolled past (progress stays at 1), so scrolling the rest of the
+  // page does no work here.
   useEffect(() => {
-    const handler = () => {
+    let frame = 0;
+    let lastProg = -1;
+    const apply = () => {
+      frame = 0;
       const prog = Math.min(window.scrollY / 280, 1);
+      if (prog === lastProg) return;
+      lastProg = prog;
       if (heroBoxRef.current) heroBoxRef.current.style.transform = `scale(${1 - prog * 0.13}) translateZ(0)`;
       if (heroSRef.current) {
         heroSRef.current.style.transform = `translateX(${-prog * 180}px)`;
@@ -99,8 +107,13 @@ export function HomePage() {
         heroAlRef.current.style.opacity = String(1 - prog * 0.5);
       }
     };
+    const handler = () => { if (!frame) frame = requestAnimationFrame(apply); };
+    apply();
     window.addEventListener('scroll', handler, { passive: true });
-    return () => window.removeEventListener('scroll', handler);
+    return () => {
+      window.removeEventListener('scroll', handler);
+      if (frame) cancelAnimationFrame(frame);
+    };
   }, []);
 
   return (
@@ -121,11 +134,6 @@ export function HomePage() {
           background: 'var(--bg)', display: 'grid', placeItems: 'center',
           marginBottom: 44, transformOrigin: 'top center', willChange: 'transform',
         }}>
-          <img src="/salx-logo.png" alt="" aria-hidden="true" style={{
-            position: 'absolute', inset: 0, width: '100%', height: '100%',
-            objectFit: 'cover', objectPosition: 'center',
-            filter: 'contrast(1.08) brightness(1.02)', pointerEvents: 'none', transform: 'translateZ(0)',
-          }} />
           <img
             src="/assets/mayden-1600.webp"
             srcSet="/assets/mayden-1600.webp 1600w, /assets/mayden-3072.webp 3072w"
