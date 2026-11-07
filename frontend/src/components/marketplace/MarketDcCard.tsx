@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import type { Listing, Project } from '../../types/domain';
-import { projectDisplay } from '../../lib/projectMeta';
+import { ipfsToHttp, projectDisplay } from '../../lib/projectMeta';
 import { useBuyListing } from './useBuyListing';
 import { env } from '../../config/env';
 import { certBadge } from './certBadge';
+import { LazyDocumentViewer, openInPlace, toViewerDocuments } from '../documents/LazyDocumentViewer';
 
 const MONO = "'IBM Plex Mono', 'JetBrains Mono', monospace";
 const SYNE = "'Syne', sans-serif";
@@ -15,6 +17,7 @@ export interface MarketDcCardProps {
 
 export function MarketDcCard({ listing, project, onChanged }: MarketDcCardProps) {
   const { buy, busy, message, amount, setAmount } = useBuyListing(listing, onChanged);
+  const [docsOpen, setDocsOpen] = useState(false);
 
   const details = projectDisplay(project);
   const badge = certBadge(details.methodology);
@@ -27,13 +30,12 @@ export function MarketDcCard({ listing, project, onChanged }: MarketDcCardProps)
   const canChooseQty = listing.remainingAmount > 1;
   const totalEth = (parseFloat(listing.pricePerUnitETH) * amount).toPrecision(4);
 
-  const mrvDocs: Array<{ name?: string; uri?: string }> =
-    (project?.projectMetadata as any)?.properties?.documents ?? [];
-  const firstMrvUri = mrvDocs[0]?.uri ?? null;
-  const mrvHref = firstMrvUri?.startsWith('ipfs://')
-    ? `https://gateway.pinata.cloud/ipfs/${firstMrvUri.slice(7)}`
-    : firstMrvUri ?? null;
-  const mrvLabel = mrvDocs.length > 1 ? `IPFS MRV (${mrvDocs.length}) ↗` : 'IPFS MRV ↗';
+  const mrvDocs = toViewerDocuments((project?.projectMetadata as any)?.properties?.documents);
+  // A click previews the MRV documents in place; the href (first document on
+  // the IPFS gateway) still serves Ctrl/middle click and "open in new tab".
+  const firstMrv = mrvDocs[0];
+  const mrvHref = firstMrv ? ipfsToHttp(firstMrv.uri, firstMrv.name) : null;
+  const mrvLabel = mrvDocs.length > 1 ? `IPFS MRV (${mrvDocs.length})` : 'IPFS MRV';
 
   const buyLabel = isBlacklisted ? 'BLACKLISTED' : busy ? 'BUYING…' : `BUY ${amount} SAL ↗`;
 
@@ -80,8 +82,12 @@ export function MarketDcCard({ listing, project, onChanged }: MarketDcCardProps)
               href={mrvHref}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              style={{ fontFamily: MONO, fontSize: 7, color: 'var(--mut)', textDecoration: 'none' }}
+              onClick={(e) => openInPlace(e, () => setDocsOpen(true))}
+              aria-haspopup="dialog"
+              title="Preview the MRV documents stored on IPFS"
+              // Padding with matching negative margin: a finger-sized tap area
+              // without changing the row's layout.
+              style={{ fontFamily: MONO, fontSize: 8, color: 'var(--mut)', textDecoration: 'none', whiteSpace: 'nowrap', padding: '10px 0 10px 12px', margin: '-10px 0' }}
             >
               {mrvLabel}
             </a>
@@ -142,6 +148,14 @@ export function MarketDcCard({ listing, project, onChanged }: MarketDcCardProps)
           </div>
         )}
       </div>
+
+      {docsOpen && (
+        <LazyDocumentViewer
+          documents={mrvDocs}
+          title={project?.projectName || `SAL Project #${listing.projectId}`}
+          onClose={() => setDocsOpen(false)}
+        />
+      )}
     </article>
   );
 }

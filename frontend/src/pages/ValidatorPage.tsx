@@ -6,6 +6,8 @@ import { env } from '../config/env';
 import marketplaceArtifact from '../contracts/abis/SALMarketplace.json';
 import type { Project, VoteProgress } from '../types/domain';
 import { errorMessage } from '../lib/errors';
+import { ipfsToHttp } from '../lib/projectMeta';
+import { LazyDocumentViewer, openInPlace, toViewerDocuments } from '../components/documents/LazyDocumentViewer';
 import { useWallet } from '../contexts/WalletContext';
 
 const MONO = "'JetBrains Mono', monospace";
@@ -47,6 +49,9 @@ export function ValidatorPage() {
   const [authChecking, setAuthChecking] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [votedProjectIds, setVotedProjectIds] = useState<Set<number>>(new Set());
+  // Index of the MRV document being previewed in the detail view, if any.
+  const [docViewerIndex, setDocViewerIndex] = useState<number | null>(null);
+  useEffect(() => { setDocViewerIndex(null); }, [detail]);
 
   // ── Load pending projects + vote progress ─────────────────────────────
   const load = useCallback(async (key: string) => {
@@ -204,10 +209,7 @@ export function ValidatorPage() {
     const rawDocs: DocEntry[] = (project.projectMetadata?.properties as any)?.documents ?? [];
     const toUri = (d: DocEntry) => (typeof d === 'string' ? d : (d.uri ?? ''));
     const toLabel = (d: DocEntry, i: number) => (typeof d === 'string' ? d : (d.name || `Document ${i + 1}`));
-    const toHref = (uri: string) =>
-      uri.startsWith('ipfs://') ? `https://gateway.pinata.cloud/ipfs/${uri.slice(7)}`
-      : /^(Qm|bafy|bafkrei|bafk|bafyb)/i.test(uri) ? `https://gateway.pinata.cloud/ipfs/${uri}`
-      : uri;
+    const toHref = (doc: DocEntry) => ipfsToHttp(toUri(doc), typeof doc === 'string' ? undefined : doc.name);
 
     return (
       <div className="home-dc" style={{ animation: 'fadeUp .35s ease' }}>
@@ -260,14 +262,14 @@ export function ValidatorPage() {
                     {rawDocs.map((doc, i) => {
                       const uri = toUri(doc);
                       const label = toLabel(doc, i);
-                      const href = toHref(uri);
+                      const href = toHref(doc);
                       return (
                         <div key={i} style={{ background: 'var(--surf)', border: '1px solid var(--bd-str)', borderRadius: 7, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <span style={{ fontFamily: MONO, fontSize: 7, color: 'var(--g)', background: 'rgba(45,201,34,.12)', borderRadius: 3, padding: '2px 6px' }}>DOC</span>
                             <span style={{ fontFamily: MONO, fontSize: 9, color: 'var(--ink)' }}>{label}</span>
                           </div>
-                          {href && <a href={href} target="_blank" rel="noopener noreferrer" style={{ fontFamily: MONO, fontSize: 8, color: 'var(--mut)', textDecoration: 'none' }}>VIEW ↗</a>}
+                          {href && <a href={href} target="_blank" rel="noopener noreferrer" aria-haspopup="dialog" onClick={(e) => openInPlace(e, () => setDocViewerIndex(i))} style={{ fontFamily: MONO, fontSize: 8, color: 'var(--mut)', textDecoration: 'none', padding: '8px 0 8px 10px', margin: '-8px 0' }}>VIEW</a>}
                         </div>
                       );
                     })}
@@ -278,7 +280,7 @@ export function ValidatorPage() {
               {/* IPFS hash */}
               {project.ipfsHash && (
                 <div style={{ background: 'var(--surf)', border: '1px solid var(--bd-str)', borderRadius: 8, padding: '11px 14px', fontFamily: MONO, fontSize: 8, color: 'var(--mut)' }}>
-                  IPFS: <a href={`https://gateway.pinata.cloud/ipfs/${project.ipfsHash}`} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--g)', textDecoration: 'none' }}>{project.ipfsHash} ↗</a>
+                  IPFS: <a href={ipfsToHttp(project.ipfsHash)} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--g)', textDecoration: 'none' }}>{project.ipfsHash} ↗</a>
                 </div>
               )}
             </div>
@@ -340,6 +342,15 @@ export function ValidatorPage() {
             </div>
           </div>
         </div>
+
+        {docViewerIndex != null && (
+          <LazyDocumentViewer
+            documents={toViewerDocuments(rawDocs)}
+            initialIndex={docViewerIndex}
+            title={project.projectName}
+            onClose={() => setDocViewerIndex(null)}
+          />
+        )}
       </div>
     );
   }
