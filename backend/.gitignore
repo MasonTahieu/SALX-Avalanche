@@ -4,3 +4,6 @@ node_modules/
 !.env.example
 npm-debug.log*
 coverage/
+
+# Demo seed progress and the generated project wallets (private keys)
+.demo-seed/

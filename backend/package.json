@@ -14,7 +14,8 @@
     "test:health": "node scripts/test-health-service.js",
     "test:certificate-artwork": "node scripts/test-certificate-artwork.js",
     "migrate:index-v3": "node scripts/migrate-index-v3.js",
-    "test:ipfs": "node scripts/test-ipfs-filebase.js"
+    "test:ipfs": "node scripts/test-ipfs-filebase.js",
+    "seed:demo": "node scripts/seed-demo-projects.js"
   },
   "keywords": [],
   "author": "",
