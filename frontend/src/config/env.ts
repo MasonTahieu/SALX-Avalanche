@@ -11,6 +11,9 @@ export const env = {
   nativeSymbol: import.meta.env.VITE_NATIVE_SYMBOL || 'AVAX',
   rpcUrl: import.meta.env.VITE_RPC_URL || 'https://api.avax-test.network/ext/bc/C/rpc',
   blockExplorerUrl: (import.meta.env.VITE_BLOCK_EXPLORER_URL || 'https://testnet.snowtrace.io').replace(/\/$/, ''),
+  // Gateway of the IPFS provider the backend pins to (Filebase), so document
+  // links don't depend on a third-party public gateway.
+  ipfsGatewayUrl: (import.meta.env.VITE_IPFS_GATEWAY_URL || 'https://ipfs.filebase.io/ipfs').replace(/\/$/, ''),
   marketplaceAddress: import.meta.env.VITE_MARKETPLACE_CONTRACT_ADDRESS || '',
   sal1155Address: import.meta.env.VITE_SAL1155_CONTRACT_ADDRESS || '',
   certificateAddress: import.meta.env.VITE_CERTIFICATE_SBT_CONTRACT_ADDRESS || '',
