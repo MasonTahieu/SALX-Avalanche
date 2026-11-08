@@ -8,8 +8,9 @@ router.get('/history/:address', async (req, res) => {
     const address = req.params.address.toLowerCase();
     const cacheKey = `tx_history_${address}`;
 
+    // Lỗi cache không được làm hỏng request: đọc thẳng từ MongoDB.
     if (redisClient.isReady) {
-      const cachedData = await redisClient.get(cacheKey);
+      const cachedData = await redisClient.get(cacheKey).catch(() => null);
       if (cachedData) return res.status(200).json(JSON.parse(cachedData));
     }
 
@@ -18,7 +19,7 @@ router.get('/history/:address', async (req, res) => {
     }).sort({ timestamp: -1 });
 
     if (redisClient.isReady && history.length > 0) {
-      await redisClient.setEx(cacheKey, 300, JSON.stringify(history));
+      await redisClient.setEx(cacheKey, 300, JSON.stringify(history)).catch(() => {});
     }
 
     res.status(200).json(history);

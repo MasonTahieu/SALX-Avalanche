@@ -14,6 +14,7 @@ const adminBlockchainRoutes = require('./routes/adminBlockchainRoutes');
 const healthRoutes = require('./routes/healthRoutes');
 const listingRoutes = require('./routes/listingRoutes');
 const { startBlockchainIndexer } = require('./services/blockchainListener');
+const { startDependencies } = require('./services/startupService');
 const redisClient = require('./config/redis');
 
 const app = express();
@@ -40,48 +41,36 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
-const startServer = async () => {
-  try {
-    console.log('⏳ Đang kết nối MongoDB...');
-    await mongoose.connect(process.env.MONGODB_URI, {
-      serverSelectionTimeoutMS: 30000,
-      socketTimeoutMS: 45000,
-    });
-    console.log('✅ Đã kết nối MongoDB');
+// Thiếu cấu hình thì không bao giờ tự hết lỗi: dừng trước khi mở cổng để lần
+// deploy báo thất bại thay vì "Live" mà không có dữ liệu.
+if (!process.env.MONGODB_URI) {
+  console.error('❌ Lỗi khởi động hệ thống: thiếu MONGODB_URI');
+  process.exit(1);
+}
 
-    if (!redisClient.isOpen) {
-      try {
-        await redisClient.connect();
-        console.log('✅ Đã kết nối Redis');
-      } catch (redisError) {
-        // Redis chỉ dùng cache, backend vẫn hoạt động nếu Redis tạm thời lỗi.
-        console.warn(
-          `⚠️ Redis không khả dụng, tiếp tục không cache: ${redisError.message}`
-        );
-      }
-    }
+// Mở cổng trước: health và API phản hồi ngay, MongoDB/Redis kết nối ở nền.
+// Trong lúc chờ kết nối, truy vấn Mongoose được giữ lại rồi chạy khi kết nối xong.
+const server = app.listen(PORT, (listenError) => {
+  // Express 5 cũng gọi callback này khi lỗi; listener 'error' bên dưới xử lý.
+  if (listenError) return;
 
-    // Mở HTTP server trước để health/API vẫn phản hồi trong lúc indexer quét lịch sử.
-    const server = app.listen(PORT, () => {
-      console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
+  console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
 
-      // Indexer chạy nền; lỗi RPC/indexer không được làm Express ngừng phục vụ.
-      startBlockchainIndexer().catch((error) => {
-        console.error(
-          '❌ Blockchain indexer khởi động thất bại:',
-          error?.message || error
-        );
-      });
-    });
-
-    server.on('error', (error) => {
-      console.error('❌ HTTP server khởi động thất bại:', error.message);
-      process.exit(1);
-    });
-  } catch (err) {
-    console.error('❌ Lỗi khởi động hệ thống:', err.message);
+  startDependencies({
+    connectMongo: () =>
+      mongoose.connect(process.env.MONGODB_URI, {
+        serverSelectionTimeoutMS: 30000,
+        socketTimeoutMS: 45000,
+      }),
+    redisClient,
+    startIndexer: startBlockchainIndexer,
+  }).catch((error) => {
+    console.error('❌ Lỗi khởi động hệ thống:', error.message);
     process.exit(1);
-  }
-};
+  });
+});
 
-startServer();
+server.on('error', (error) => {
+  console.error('❌ HTTP server khởi động thất bại:', error.message);
+  process.exit(1);
+});
