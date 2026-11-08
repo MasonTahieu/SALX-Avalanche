@@ -12,14 +12,15 @@ const SELECT_STYLE: React.CSSProperties = {
   minHeight: 34,
   outline: 'none',
   color: 'var(--ink)',
-  fontSize: 9,
+  fontSize: 12,
   fontFamily: MONO,
   appearance: 'none',
+  textOverflow: 'ellipsis',
 };
 
 function FilterLabel({ children }: { children: React.ReactNode }) {
   return (
-    <span style={{ fontFamily: MONO, fontSize: 8, letterSpacing: '.13em', textTransform: 'uppercase' as const, color: 'var(--mut)' }}>
+    <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '.13em', textTransform: 'uppercase' as const, color: 'var(--mut)' }}>
       {children}
     </span>
   );
@@ -29,7 +30,7 @@ function SelectWrap({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ position: 'relative', marginTop: 6 }}>
       {children}
-      <span aria-hidden="true" style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--mut)', fontSize: 9 }}>▾</span>
+      <span aria-hidden="true" style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--mut)', fontSize: 11 }}>▾</span>
     </div>
   );
 }
@@ -51,8 +52,8 @@ export function MarketDcFilters({ types, geos, pending, onType, onGeo, onVintage
   return (
     <section style={{ background: 'var(--surf)', border: '1px solid var(--bd)', borderRadius: 12, padding: '18px 16px', position: 'sticky', top: 80, display: 'flex', flexDirection: 'column', minHeight: 370 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <span style={{ fontFamily: MONO, fontSize: 8, letterSpacing: '.14em', textTransform: 'uppercase', fontWeight: 700, color: 'var(--ink)' }}>FILTERS</span>
-        <span style={{ fontFamily: MONO, fontSize: 7, letterSpacing: '.08em', color: 'var(--faint)' }}>REFINE</span>
+        <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: '.14em', textTransform: 'uppercase', fontWeight: 700, color: 'var(--ink)' }}>FILTERS</span>
+        <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '.08em', color: 'var(--mut)' }}>REFINE</span>
       </div>
 
       <label style={{ display: 'flex', flexDirection: 'column', marginBottom: 13 }}>
@@ -87,7 +88,7 @@ export function MarketDcFilters({ types, geos, pending, onType, onGeo, onVintage
             onChange={(e) => onVintage(Number(e.target.value))}
             style={{ width: '100%', accentColor: 'var(--g)' }}
           />
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontFamily: MONO, fontSize: 9, color: 'var(--faint)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontFamily: MONO, fontSize: 10, color: 'var(--mut)' }}>
             <span>{VINTAGE_MIN}</span>
             <span>{VINTAGE_MAX}</span>
           </div>
@@ -97,13 +98,13 @@ export function MarketDcFilters({ types, geos, pending, onType, onGeo, onVintage
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 'auto' }}>
         <button
           onClick={onApply}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'var(--g)', border: '1px solid var(--g)', borderRadius: 6, padding: 10, fontFamily: MONO, fontSize: 8, letterSpacing: '.11em', textTransform: 'uppercase', fontWeight: 700, color: '#08150e', width: '100%', cursor: 'pointer' }}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'var(--g)', border: '1px solid var(--g)', borderRadius: 6, padding: 10, fontFamily: MONO, fontSize: 11, letterSpacing: '.11em', textTransform: 'uppercase', fontWeight: 700, color: '#08150e', width: '100%', cursor: 'pointer' }}
         >
           APPLY FILTERS ↗
         </button>
         <button
           onClick={onClear}
-          style={{ background: 'transparent', border: 'none', color: 'var(--mut)', fontFamily: MONO, fontSize: 8, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 3, padding: '4px 0' }}
+          style={{ background: 'transparent', border: 'none', color: 'var(--mut)', fontFamily: MONO, fontSize: 11, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 3, padding: '6px 0' }}
         >
           CLEAR ALL
         </button>
