@@ -4,7 +4,7 @@ const { getHealthReport } = require('../services/healthService');
 const router = express.Router();
 
 // Cheap liveness probe: no database or RPC calls. Used by the frontend to wake
-// the server early and by the keep-alive workflow, so neither waits on the
+// the server early and by the external uptime monitor, so neither waits on the
 // full report below (which checks MongoDB, Redis and the chain).
 router.get('/live', (req, res) => {
   res.set('Cache-Control', 'no-store');
