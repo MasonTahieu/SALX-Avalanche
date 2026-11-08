@@ -13,10 +13,13 @@ function DcCardSkeleton() {
   return (
     <div aria-hidden="true" style={{ background: 'var(--surf)', border: '1px solid var(--bd)', borderRadius: 12, padding: 10 }}>
       <div className="market-dc-skeleton-cover" />
-      <div style={{ paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <div className="market-dc-skeleton-line" style={{ width: '65%' }} />
-        <div className="market-dc-skeleton-line" style={{ width: '40%' }} />
-        <div className="market-dc-skeleton-line" style={{ height: 32, marginTop: 4, width: '100%' }} />
+      {/* Same rows and heights as MarketDcCard, so the page doesn't jump on load. */}
+      <div style={{ paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div className="market-dc-skeleton-line" style={{ height: 34, width: '80%' }} />
+        <div className="market-dc-skeleton-line" style={{ height: 31, width: '60%' }} />
+        <div className="market-dc-skeleton-line" style={{ height: 29, width: '45%' }} />
+        <div className="market-dc-skeleton-line" style={{ height: 26, width: '100%' }} />
+        <div className="market-dc-skeleton-line" style={{ height: 38, width: '100%' }} />
       </div>
     </div>
   );

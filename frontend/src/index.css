@@ -7,7 +7,7 @@
   /* Core palette */
   --bg:#0b1311; --surf:#101c18; --surf2:#162119;
   --ink:#ede7dc; --mut:#9ea5a8; --faint:#8ba69b;
-  --g:#2dc922; --gd:rgba(45,201,34,.18); --gb:rgba(45,201,34,.08);
+  --g:#2dc922; --g-text:#2dc922; --gd:rgba(45,201,34,.18); --gb:rgba(45,201,34,.08);
   --bd:rgba(237,231,220,.12); --bd2:rgba(237,231,220,.22);
   --bd-soft:rgba(237,231,220,.10); --bd-mid:rgba(237,231,220,.14); --bd-str:rgba(237,231,220,.18);
   --hdr:rgba(11,19,17,.92); --org:#e8913c; --gold:#e7c765;
@@ -33,7 +33,7 @@
 [data-theme="light"] {
   --bg:#F1EFE7; --surf:#eff2ef; --surf2:#e5eae5;
   --ink:#0f1c0e; --mut:#516851; --faint:#7a8e7a;
-  --g:#138f0e; --gd:rgba(19,143,14,.13); --gb:rgba(19,143,14,.07);
+  --g:#138f0e; --g-text:#0f7a0b; --gd:rgba(19,143,14,.13); --gb:rgba(19,143,14,.07);
   --bd:rgba(15,28,14,.18); --bd2:rgba(15,28,14,.28);
   --bd-soft:rgba(15,28,14,.12); --bd-mid:rgba(15,28,14,.16); --bd-str:rgba(15,28,14,.20);
   --hdr:rgba(241,239,231,.92);
@@ -153,12 +153,11 @@ button,input,textarea,select{font:inherit;color:inherit} a{color:inherit;text-de
    Marketplace DC layout
 =================================================================== */
 .market-dc-layout{display:grid;grid-template-columns:240px 1fr;gap:28px;align-items:start}
-.market-dc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.market-dc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(250px,100%),1fr));gap:14px}
 .market-dc-card:hover{transform:translateY(-3px);border-color:rgba(45,201,34,.35)!important}
 .market-dc-skeleton-cover{aspect-ratio:1.16/1;border-radius:8px;background:linear-gradient(90deg,var(--surf) 25%,var(--surf2) 50%,var(--surf) 75%);background-size:200% 100%;animation:market-shimmer 1.4s infinite}
 .market-dc-skeleton-line{height:12px;border-radius:6px;background:linear-gradient(90deg,var(--surf) 25%,var(--surf2) 50%,var(--surf) 75%);background-size:200% 100%;animation:market-shimmer 1.4s infinite}
-@media(max-width:900px){.market-dc-layout{grid-template-columns:1fr}.market-dc-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:580px){.market-dc-grid{grid-template-columns:1fr}}
+@media(max-width:900px){.market-dc-layout{grid-template-columns:1fr}}
 
 /* Retire page: terminal panel + summary. Stacks on phones and small tablets. */
 .retire-layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:14px;align-items:stretch}
