@@ -234,6 +234,8 @@ npm run dev
 npm test
 ```
 
+Đăng nhập bằng Google hoặc email (tuỳ chọn): tạo app trên [Privy](https://dashboard.privy.io), bật hai phương thức này và điền `VITE_PRIVY_APP_ID`. Để trống thì lựa chọn này được ẩn. Ví tạo qua Privy ban đầu có 0 AVAX, người dùng cần tự nạp AVAX test để mua và retire.
+
 ## Cấu trúc thư mục
 
 ```

@@ -6,6 +6,7 @@ import { env } from '../../config/env';
 import { NETWORKS, networkById } from '../../config/networks';
 import type { WalletKind } from '../../services/blockchain';
 import { useServerWaking } from '../../services/serverStatus';
+import { FundingNotice } from '../wallet/FundingNotice';
 import './AppShell.css';
 
 const MONO = "'JetBrains Mono', monospace";
@@ -345,6 +346,8 @@ export function AppShell() {
         <div className="app-hdr-backdrop" aria-hidden="true" onClick={() => setMenuOpen(false)} />
       )}
 
+      <FundingNotice />
+
       {/* ── Page content ── */}
       <main className="sal-shell" style={{ padding: '32px 0', flex: 1 }}>
         {/* Pages are lazy chunks; keep the footer from jumping up while one loads. */}
@@ -523,6 +526,30 @@ export function AppShell() {
                   </span>
                 </div>
 
+                {/* Email or Google, for visitors without a wallet */}
+                {env.privyAppId && modalRole === 'user' && (
+                  <button
+                    onClick={() => connectWith('privy')}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 14,
+                      background: 'rgba(45,201,34,.1)', border: '1px solid rgba(45,201,34,.35)',
+                      borderRadius: 10, marginBottom: 10,
+                      padding: '14px 16px', cursor: 'pointer', width: '100%', textAlign: 'left',
+                    }}
+                  >
+                    <span style={{
+                      width: 34, height: 34, background: 'var(--g)',
+                      borderRadius: 8, display: 'grid', placeItems: 'center',
+                      fontFamily: SYNE, fontWeight: 800, fontSize: 15, color: 'var(--bg)', flexShrink: 0,
+                    }}>@</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontFamily: SYNE, fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>Google or Email</div>
+                      <div style={{ fontFamily: MONO, fontSize: 9, color: 'var(--mut)', marginTop: 2 }}>No extension. A wallet is created for you</div>
+                    </div>
+                    <span style={{ color: 'var(--g)', fontSize: 14 }}>→</span>
+                  </button>
+                )}
+
                 {/* Core (Avalanche) */}
                 <button
                   onClick={() => connectWith('core')}
@@ -602,7 +629,7 @@ export function AppShell() {
                   fontFamily: MONO, fontSize: 8, letterSpacing: '.06em',
                   color: 'var(--faint)', textAlign: 'center', margin: '16px 0 0',
                 }}>
-                  NON-CUSTODIAL · YOUR KEYS, YOUR CREDITS
+                  YOU APPROVE EVERY TRANSACTION
                 </p>
               </div>
             )}

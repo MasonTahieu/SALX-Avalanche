@@ -17,11 +17,12 @@ const loadAbis = () => (abiModules ??= Promise.all([
   certificate: certificate.default.abi,
 })));
 
-export type WalletKind = 'core' | 'metamask' | 'coin98';
+export type WalletKind = 'core' | 'metamask' | 'coin98' | 'privy';
 
 export function walletLabel(kind: WalletKind | null) {
   if (kind === 'core') return 'Core Wallet';
   if (kind === 'coin98') return 'Coin98 Wallet';
+  if (kind === 'privy') return 'Email wallet';
   return 'MetaMask';
 }
 
@@ -50,6 +51,12 @@ declare global {
 
 let activeProvider: InjectedEthereum | null = null;
 let activeWalletKind: WalletKind | null = null;
+let embeddedProvider: InjectedEthereum | null = null;
+
+/** The wallet Privy created for this account. It has no browser extension to discover. */
+export function setEmbeddedWalletProvider(provider: InjectedEthereum | null) {
+  embeddedProvider = provider;
+}
 
 function defaultInjectedProvider() {
   if (!window.ethereum) throw new Error('Không tìm thấy ví EVM trong trình duyệt.');
@@ -76,6 +83,11 @@ function legacyProviders(): InjectedEthereum[] {
 }
 
 export async function getWalletProvider(kind: WalletKind): Promise<InjectedEthereum> {
+  if (kind === 'privy') {
+    if (!embeddedProvider) throw new Error('Hãy đăng nhập bằng email trước.');
+    return embeddedProvider;
+  }
+
   const announced = await discoverEip6963Providers();
 
   if (kind === 'core') {

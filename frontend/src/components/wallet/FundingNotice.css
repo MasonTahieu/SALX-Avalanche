@@ -1,0 +1,43 @@
+.funding-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 20px;
+  padding: 12px 34px;
+  background: var(--surf);
+  border-bottom: 1px solid rgba(232, 145, 60, .45);
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.funding-notice__text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.funding-notice__text strong { font-weight: 600; }
+
+.funding-notice__text code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--mut);
+  overflow-wrap: anywhere;
+}
+
+.funding-notice__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+
+.funding-notice__actions button,
+.funding-notice__actions a {
+  padding: 7px 12px;
+  border: 1px solid var(--bd2);
+  border-radius: 6px;
+  background: none;
+  color: var(--ink);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.funding-notice__actions a { border-color: var(--org); color: var(--org); }
+
+@media (max-width: 640px) {
+  .funding-notice { padding: 12px 16px; }
+}

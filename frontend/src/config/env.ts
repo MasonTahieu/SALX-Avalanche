@@ -17,6 +17,9 @@ export const env = {
   marketplaceAddress: import.meta.env.VITE_MARKETPLACE_CONTRACT_ADDRESS || '',
   sal1155Address: import.meta.env.VITE_SAL1155_CONTRACT_ADDRESS || '',
   certificateAddress: import.meta.env.VITE_CERTIFICATE_SBT_CONTRACT_ADDRESS || '',
+  // Email and Google sign-in stay hidden until an app ID is configured.
+  privyAppId: import.meta.env.VITE_PRIVY_APP_ID || '',
+  privyClientId: import.meta.env.VITE_PRIVY_CLIENT_ID || '',
 };
 
 export const assertPublicContractConfig = () => {

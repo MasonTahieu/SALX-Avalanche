@@ -1,9 +1,15 @@
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  resolve: {
+    alias: {
+      '@solana-program/system': fileURLToPath(new URL('./src/shims/solana-program-system.ts', import.meta.url)),
+    },
+  },
   build: {
     // Hashed build output gets its own folder, separate from the unhashed
     // images in public/assets, so vercel.json can cache it for a year.

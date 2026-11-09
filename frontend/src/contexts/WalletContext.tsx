@@ -1,10 +1,11 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   connectWallet,
   getBrowserProvider,
   getWalletProvider,
   restoreWalletProvider,
   setActiveWalletProvider,
+  setEmbeddedWalletProvider,
   switchToNetwork,
   nativeBalance,
   type InjectedEthereum,
@@ -12,6 +13,7 @@ import {
 } from '../services/blockchain';
 import { env } from '../config/env';
 import { errorMessage } from '../lib/errors';
+import { PrivyHost } from '../components/wallet/PrivyHost';
 
 interface WalletState {
   address: string | null;
@@ -48,7 +50,7 @@ const SESSION_KEY = 'salx.session';
 
 function savedWalletKind(): WalletKind | null {
   const saved = localStorage.getItem('salx.walletKind');
-  return saved === 'core' || saved === 'metamask' || saved === 'coin98' ? saved : null;
+  return saved === 'core' || saved === 'metamask' || saved === 'coin98' || saved === 'privy' ? saved : null;
 }
 
 function savedRole(): 'user' | 'validator' {
@@ -68,6 +70,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [balance, setBalance] = useState<string | null>(null);
   const [role, setRoleState] = useState<'user' | 'validator'>(savedRole);
+  // Privy stays mounted while its wallet is in use, because it handles the signing.
+  const [privyMode, setPrivyMode] = useState<'login' | 'restore' | null>(null);
+  const privyLogout = useRef<(() => Promise<void>) | null>(null);
 
   const setRole = useCallback((r: 'user' | 'validator') => {
     setRoleState(r);
@@ -89,6 +94,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     // Without this gate, eth_accounts silently reconnects on every page load
     // using previously-stored permission without any extension popup.
     if (!kind || !sessionStorage.getItem(SESSION_KEY)) return;
+    if (kind === 'privy') {
+      setPrivyMode('restore');
+      return;
+    }
     try {
       const injected = await restoreWalletProvider(kind);
       setActiveInjectedProviderState(injected);
@@ -109,9 +118,53 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }, [walletKind]);
 
+  const adoptConnection = useCallback(async (result: Awaited<ReturnType<typeof connectWallet>>) => {
+    setAddress(result.address);
+    setChainId(result.chainId);
+    setWalletKind(result.kind);
+    setActiveInjectedProviderState(result.provider);
+    localStorage.setItem('salx.walletKind', result.kind);
+    sessionStorage.setItem(SESSION_KEY, '1');
+    try { setBalance(await nativeBalance(result.address)); } catch { setBalance(null); }
+    setModalOpen(false);
+    setAccountMenuOpen(false);
+  }, []);
+
+  const handlePrivyConnected = useCallback(async (provider: InjectedEthereum) => {
+    try {
+      setEmbeddedWalletProvider(provider);
+      await adoptConnection(await connectWallet('privy'));
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setConnecting(false);
+    }
+  }, [adoptConnection]);
+
+  const handlePrivyStopped = useCallback((message: string | null) => {
+    setPrivyMode(null);
+    setConnecting(false);
+    setEmbeddedWalletProvider(null);
+    if (message) setError(message);
+    // A saved email session that has ended must not be retried on every load.
+    if (localStorage.getItem('salx.walletKind') === 'privy') {
+      localStorage.removeItem('salx.walletKind');
+      sessionStorage.removeItem(SESSION_KEY);
+      setWalletKind(null);
+    }
+  }, []);
+
+  const registerPrivyLogout = useCallback((logout: (() => Promise<void>) | null) => {
+    privyLogout.current = logout;
+  }, []);
+
   const connect = useCallback(async (kind: WalletKind) => {
     setConnecting(true);
     setError(null);
+    if (kind === 'privy') {
+      setPrivyMode('login');
+      return;
+    }
     try {
       const injected = await getWalletProvider(kind);
 
@@ -134,24 +187,19 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
       await (await getBrowserProvider(injected)).send('eth_requestAccounts', []);
 
-      const result = await connectWallet(kind);
-      setAddress(result.address);
-      setChainId(result.chainId);
-      setWalletKind(kind);
-      setActiveInjectedProviderState(result.provider);
-      localStorage.setItem('salx.walletKind', kind);
-      sessionStorage.setItem(SESSION_KEY, '1');
-      try { setBalance(await nativeBalance(result.address)); } catch { setBalance(null); }
-      setModalOpen(false);
-      setAccountMenuOpen(false);
+      await adoptConnection(await connectWallet(kind));
     } catch (e) {
       setError(errorMessage(e));
     } finally {
       setConnecting(false);
     }
-  }, []);
+  }, [adoptConnection]);
 
   const disconnect = useCallback(() => {
+    const logout = privyLogout.current;
+    if (logout) void logout().catch(() => {}).finally(() => setPrivyMode(null));
+    else setPrivyMode(null);
+    setEmbeddedWalletProvider(null);
     setAddress(null);
     setChainId(null);
     setWalletKind(null);
@@ -235,7 +283,19 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     refreshBalance,
   }), [address, chainId, walletKind, connecting, error, modalOpen, modalAsksRole, accountMenuOpen, balance, role, setRole, connect, disconnect, switchNetwork, refresh, refreshBalance]);
 
-  return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
+  return (
+    <WalletContext.Provider value={value}>
+      {children}
+      {privyMode && (
+        <PrivyHost
+          mode={privyMode}
+          onConnected={handlePrivyConnected}
+          onStopped={handlePrivyStopped}
+          registerLogout={registerPrivyLogout}
+        />
+      )}
+    </WalletContext.Provider>
+  );
 }
 
 export const useWallet = () => {
