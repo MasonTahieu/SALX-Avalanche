@@ -208,11 +208,11 @@ export function HomePage() {
           </span>
           <div className="home-dc-grid-2col" style={{ display: 'grid', gridTemplateColumns: '1.05fr .95fr', gap: 86, marginTop: 28, alignItems: 'start' }}>
             <h2 style={{ fontFamily: SYNE, fontWeight: 800, fontSize: 'clamp(40px,5vw,66px)', lineHeight: .91, letterSpacing: '-.02em', margin: 0, color: 'var(--ink)' }}>
-              ONE TOKEN.<br />ONE TONNE.<br /><span style={{ color: 'var(--g)' }}>ONE TRACE.</span>
+              ONE TOKEN.<br />10 KG.<br /><span style={{ color: 'var(--g)' }}>ONE TRACE.</span>
             </h2>
             <div>
               <p style={{ fontSize: 12, lineHeight: 1.5, color: 'var(--mut)', margin: '0 0 44px' }}>
-                Each SAL represents one verified tonne of avoided or removed carbon. Project evidence, retirement history, and ownership travel with the unit.
+                Each SAL represents 10 kg CO₂e of verified avoided or removed carbon. Project evidence, retirement history, and ownership travel with the unit.
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 18, borderTop: '1px solid var(--bd-soft)', paddingTop: 15 }}>
                 <MetaItem label="TOKEN" value="SAL" />
