@@ -23,6 +23,7 @@ const USER_NAV: NavItem[] = [
   { to: '/submit',      label: 'Submit' },
   { to: '/dashboard',   label: 'Dashboard' },
   { to: '/leaderboard', label: 'Leaderboard' },
+  { to: '/proof',       label: 'Proof' },
 ];
 
 const VALIDATOR_NAV: NavItem[] = [

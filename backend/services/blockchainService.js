@@ -213,6 +213,7 @@ const unblacklistOwnerOnChain = async (address) => {
 };
 
 module.exports = {
+  getProvider,
   approveAndMintOnChain,
   getProjectSubmissionQuote,
   addValidatorOnChain,

@@ -95,6 +95,33 @@ export interface Certificate {
   metadata?: Record<string, any>;
 }
 
+export interface ProofActivity {
+  type: string;
+  count: number;
+  averageGasUsed: number | null;
+  averageFeeAvax: string | null;
+  feeSamples: number;
+}
+
+export interface ProofTransaction {
+  type: string;
+  txHash: string;
+  blockNumber: number;
+  timestamp: string;
+  gasUsed: number | null;
+  feeAvax: string | null;
+}
+
+export interface ProofReport {
+  generatedAt: string;
+  chainId: number;
+  latestBlock: number | null;
+  rpcAvailable: boolean;
+  blockTime: { averageSeconds: number; sampleBlocks: number } | null;
+  activity: ProofActivity[];
+  recent: ProofTransaction[];
+}
+
 export interface TransactionEvent {
   _id?: string;
   txHash: string;

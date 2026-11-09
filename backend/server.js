@@ -13,6 +13,7 @@ const feeRoutes = require('./routes/feeRoutes');
 const adminBlockchainRoutes = require('./routes/adminBlockchainRoutes');
 const healthRoutes = require('./routes/healthRoutes');
 const listingRoutes = require('./routes/listingRoutes');
+const proofRoutes = require('./routes/proofRoutes');
 const { startBlockchainIndexer } = require('./services/blockchainListener');
 const { startDependencies } = require('./services/startupService');
 const redisClient = require('./config/redis');
@@ -33,6 +34,7 @@ app.use('/api/certificates', certificateRoutes);
 app.use('/api/fees', feeRoutes);
 app.use('/api/admin/blockchain', adminBlockchainRoutes);
 app.use('/api/listings', listingRoutes);
+app.use('/api/proof', proofRoutes);
 
 app.use((err, req, res, next) => {
   console.error('❌ Unhandled error:', err);

@@ -13,6 +13,7 @@ const loadRetire = () => import('./pages/RetirePage');
 const loadLeaderboard = () => import('./pages/LeaderboardPage');
 const loadValidator = () => import('./pages/ValidatorPage');
 const loadActivity = () => import('./pages/ActivityPage');
+const loadProof = () => import('./pages/ProofPage');
 
 const MarketplacePage = lazy(() => loadMarketplace().then(m => ({ default: m.MarketplacePage })));
 const SubmitProjectPage = lazy(() => loadSubmit().then(m => ({ default: m.SubmitProjectPage })));
@@ -22,6 +23,7 @@ const RetirePage = lazy(() => loadRetire().then(m => ({ default: m.RetirePage })
 const LeaderboardPage = lazy(() => loadLeaderboard().then(m => ({ default: m.LeaderboardPage })));
 const ValidatorPage = lazy(() => loadValidator().then(m => ({ default: m.ValidatorPage })));
 const ActivityPage = lazy(() => loadActivity().then(m => ({ default: m.ActivityPage })));
+const ProofPage = lazy(() => loadProof().then(m => ({ default: m.ProofPage })));
 
 // Pages in the main navigation, fetched in the background once the first page
 // has settled, so opening them later shows no blank loading gap.
@@ -59,6 +61,7 @@ export default function App() {
       <Route path="/dashboard"   element={<PortfolioPage />} />
       <Route path="/leaderboard" element={<LeaderboardPage />} />
       <Route path="/activity"    element={<ActivityPage />} />
+      <Route path="/proof"       element={<ProofPage />} />
       <Route path="/validator"   element={<ValidatorPage />} />
       <Route path="/admin"       element={<AdminPage />} />
       {/* Legacy redirects */}

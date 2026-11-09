@@ -5,6 +5,7 @@ import type {
   Listing,
   Project,
   ProjectMetadataResponse,
+  ProofReport,
   RetirementMetadataRequest,
   Stats,
   TransactionEvent,
@@ -22,6 +23,7 @@ export const uploadDocumentToIPFS = async (file: File) => {
 
 export const backend = {
   health: () => api<any>('/api/health'),
+  proof: () => api<ProofReport>('/api/proof'),
   stats: () => api<Stats>('/api/projects/stats'),
   projects: (status: 'approved' | 'pending' | 'cancelled' | 'all' = 'approved') =>
     api<Project[]>(`/api/projects?status=${status}`),
