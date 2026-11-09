@@ -240,8 +240,7 @@ npm test
 SALX/
 ├── smart-contract/   Solidity contracts, test Hardhat, module deploy Ignition
 ├── backend/          API Express, indexer blockchain, dịch vụ IPFS
-├── frontend/         Ứng dụng React
-└── SALX UI Mockups and Prototype/   Mockup, prototype và đặc tả luồng UI
+└── frontend/         Ứng dụng React
 ```
 
 ## Hạn chế đã biết
