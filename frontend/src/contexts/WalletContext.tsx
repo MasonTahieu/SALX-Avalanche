@@ -21,6 +21,8 @@ interface WalletState {
   connecting: boolean;
   error: string | null;
   modalOpen: boolean;
+  /** True only when opened from the header; an action on a page skips the role step. */
+  modalAsksRole: boolean;
   accountMenuOpen: boolean;
   nativeBalance: string | null;
   role: 'user' | 'validator';
@@ -28,6 +30,7 @@ interface WalletState {
   connect: (kind: WalletKind) => Promise<void>;
   disconnect: () => void;
   openWalletModal: () => void;
+  openRoleModal: () => void;
   closeWalletModal: () => void;
   openAccountMenu: () => void;
   closeAccountMenu: () => void;
@@ -61,6 +64,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [modalAsksRole, setModalAsksRole] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [balance, setBalance] = useState<string | null>(null);
   const [role, setRoleState] = useState<'user' | 'validator'>(savedRole);
@@ -214,20 +218,22 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     connecting,
     error,
     modalOpen,
+    modalAsksRole,
     accountMenuOpen,
     nativeBalance: balance,
     role,
     setRole,
     connect,
     disconnect,
-    openWalletModal: () => setModalOpen(true),
+    openWalletModal: () => { setModalAsksRole(false); setModalOpen(true); },
+    openRoleModal: () => { setModalAsksRole(true); setModalOpen(true); },
     closeWalletModal: () => setModalOpen(false),
     openAccountMenu: () => setAccountMenuOpen(true),
     closeAccountMenu: () => setAccountMenuOpen(false),
     switchNetwork,
     refresh,
     refreshBalance,
-  }), [address, chainId, walletKind, connecting, error, modalOpen, accountMenuOpen, balance, role, setRole, connect, disconnect, switchNetwork, refresh, refreshBalance]);
+  }), [address, chainId, walletKind, connecting, error, modalOpen, modalAsksRole, accountMenuOpen, balance, role, setRole, connect, disconnect, switchNetwork, refresh, refreshBalance]);
 
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
 }

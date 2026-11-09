@@ -92,19 +92,20 @@ export function AppShell() {
     return () => document.removeEventListener('mousedown', handler);
   }, [netOpen]);
 
-  // Navigate after successful wallet connection from modal
+  // After connecting, a user stays on the current page so an action in progress
+  // (such as a purchase) can continue; only validators move to their own page.
   useEffect(() => {
     if (connectingFromModalRef.current && wallet.address && !wallet.connecting) {
       connectingFromModalRef.current = false;
       setModalStep('role');
       wallet.setRole(pendingRoleRef.current);
-      navigate(pendingRoleRef.current === 'validator' ? '/validator' : '/');
+      if (pendingRoleRef.current === 'validator') navigate('/validator');
     }
   }, [wallet.address, wallet.connecting, navigate, wallet.setRole]);
 
   const openModal = () => {
     setModalStep('role');
-    wallet.openWalletModal();
+    wallet.openRoleModal();
   };
 
   const closeModal = () => {
@@ -117,7 +118,12 @@ export function AppShell() {
     setModalStep('wallet');
   };
 
+  // Opened from an action on a page: the visitor is a user, so skip the role step.
+  const currentStep: ModalStep = wallet.modalAsksRole ? modalStep : 'wallet';
+  const modalRole: Role = wallet.modalAsksRole ? pendingRoleRef.current : 'user';
+
   const connectWith = async (kind: WalletKind) => {
+    pendingRoleRef.current = modalRole;
     connectingFromModalRef.current = true;
     await wallet.connect(kind);
   };
@@ -416,13 +422,13 @@ export function AppShell() {
                   animation: 'spin .8s linear infinite',
                 }} />
                 <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: '.12em', color: 'var(--mut)' }}>
-                  CONNECTING AS {pendingRoleRef.current.toUpperCase()}…
+                  CONNECTING AS {modalRole.toUpperCase()}…
                 </span>
               </div>
             )}
 
             {/* Step 1 — Role */}
-            {!wallet.connecting && modalStep === 'role' && (
+            {!wallet.connecting && currentStep === 'role' && (
               <>
                 <p style={{
                   fontFamily: INTER, fontWeight: 500, fontSize: 10, letterSpacing: '.08em',
@@ -484,33 +490,35 @@ export function AppShell() {
             )}
 
             {/* Step 2 — Wallet */}
-            {!wallet.connecting && modalStep === 'wallet' && (
+            {!wallet.connecting && currentStep === 'wallet' && (
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <div style={{
                   display: 'flex', alignItems: 'center',
                   justifyContent: 'space-between', marginBottom: 16,
                 }}>
-                  <button
-                    onClick={() => setModalStep('role')}
-                    style={{
-                      fontFamily: MONO, fontSize: 8, letterSpacing: '.08em',
-                      color: 'var(--mut)', background: 'none', border: 'none',
-                      cursor: 'pointer', padding: 0,
-                    }}
-                  >
-                    ← BACK
-                  </button>
+                  {wallet.modalAsksRole ? (
+                    <button
+                      onClick={() => setModalStep('role')}
+                      style={{
+                        fontFamily: MONO, fontSize: 8, letterSpacing: '.08em',
+                        color: 'var(--mut)', background: 'none', border: 'none',
+                        cursor: 'pointer', padding: 0,
+                      }}
+                    >
+                      ← BACK
+                    </button>
+                  ) : <span aria-hidden="true" />}
                   <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: '.12em', color: 'var(--mut)' }}>
                     SELECT WALLET
                   </span>
                   <span style={{
                     fontFamily: MONO, fontSize: 8,
-                    color: pendingRoleRef.current === 'validator' ? '#e7c765' : 'var(--g)',
-                    background: pendingRoleRef.current === 'validator'
+                    color: modalRole === 'validator' ? '#e7c765' : 'var(--g)',
+                    background: modalRole === 'validator'
                       ? 'rgba(231,199,101,.1)' : 'rgba(45,201,34,.1)',
                     padding: '3px 8px', borderRadius: 4, letterSpacing: '.06em',
                   }}>
-                    {pendingRoleRef.current.toUpperCase()}
+                    {modalRole.toUpperCase()}
                   </span>
                 </div>
 

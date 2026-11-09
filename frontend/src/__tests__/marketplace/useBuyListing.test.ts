@@ -49,6 +49,46 @@ describe('useBuyListing', () => {
       expect(buySAL).not.toHaveBeenCalled();
     });
 
+    it('continues the purchase with the chosen amount once connected', async () => {
+      vi.mocked(buySAL).mockResolvedValue({ txHash: '0xhash', blockNumber: 1 });
+      const wallet: any = { address: null, modalOpen: false, openWalletModal: vi.fn() };
+      vi.mocked(useWallet).mockImplementation(() => wallet);
+      const { result, rerender } = renderHook(() => useBuyListing(mockListing, onSuccess));
+
+      act(() => { result.current.setAmount(3); });
+      await act(async () => { await result.current.buy(); });
+
+      wallet.modalOpen = true;
+      rerender();
+      wallet.address = '0xbuyer'; // connected, dialog still closing: not yet
+      rerender();
+      expect(buySAL).not.toHaveBeenCalled();
+
+      wallet.modalOpen = false;
+      await act(async () => { rerender(); });
+
+      expect(buySAL).toHaveBeenCalledOnce();
+      expect(buySAL).toHaveBeenCalledWith(42, 3, '1000000000000000');
+    });
+
+    it('drops the purchase when the dialog closes without connecting', async () => {
+      const wallet: any = { address: null, modalOpen: false, openWalletModal: vi.fn() };
+      vi.mocked(useWallet).mockImplementation(() => wallet);
+      const { result, rerender } = renderHook(() => useBuyListing(mockListing, onSuccess));
+
+      await act(async () => { await result.current.buy(); });
+      wallet.modalOpen = true;
+      rerender();
+      wallet.modalOpen = false;
+      rerender();
+
+      // Connecting later, for another reason, must not buy anything.
+      wallet.address = '0xbuyer';
+      await act(async () => { rerender(); });
+
+      expect(buySAL).not.toHaveBeenCalled();
+    });
+
     it('reports isWalletConnected as false', () => {
       mockWallet(null);
       const { result } = renderHook(() => useBuyListing(mockListing, onSuccess));
