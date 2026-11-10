@@ -3,7 +3,7 @@ const { ethers } = require('ethers');
 const Certificate = require('../Models/Certificate');
 const { createCertificateMetadata } = require('../services/certificateMetadataService');
 const { syncRetirementTransaction } = require('../services/blockchainListener');
-const { ipfsToHttp } = require('../services/ipfsService');
+const { EMBEDDED_IMAGE_PROJECTION, serializeCertificate } = require('../services/certificateSerializer');
 const {
   artworkInputFromCertificate,
   buildCertificateSvg,
@@ -64,33 +64,6 @@ const downloadFilename = (certificate) => {
     .find((attribute) => attribute.trait_type === 'Certificate Serial')?.value;
   const label = String(serial || `SBT-${certificate.certificateTokenId}`).replace(/[^A-Za-z0-9-]/g, '');
   return `SALX-Certificate-${label}.png`;
-};
-
-const serializeCertificate = (certificate) => {
-  const data = certificate?.toObject ? certificate.toObject() : certificate;
-  if (!data) return null;
-
-  const sources = Array.isArray(data.sources) && data.sources.length > 0
-    ? data.sources
-    : Number(data.projectId) > 0
-      ? [{
-          projectId: Number(data.projectId),
-          projectName: data.projectName || `Dự án #${data.projectId}`,
-          retiredTokenAmount: Number(data.retiredTokenAmount || 0),
-          retiredCO2Kg: Number(data.retiredCO2Kg || 0),
-        }]
-      : [];
-
-  return {
-    ...data,
-    projectCount: data.projectCount || sources.length || 1,
-    sources,
-    certificateURIHttp: ipfsToHttp(data.certificateURI),
-    imageURL: ipfsToHttp(data.imageURI || data.metadata?.image),
-    explorerURL: data.txHash
-      ? `${(process.env.BLOCK_EXPLORER_URL || 'https://testnet.snowtrace.io').replace(/\/$/, '')}/tx/${data.txHash}`
-      : null,
-  };
 };
 
 // Tạo metadata + chữ ký EIP-712 trước khi gọi retireSAL multi-project.
@@ -169,7 +142,7 @@ router.get('/tx/:txHash', async (req, res) => {
       return res.status(400).json({ error: 'Transaction hash không hợp lệ' });
     }
 
-    let certificate = await Certificate.findOne({ txHash });
+    let certificate = await Certificate.findOne({ txHash }).select(EMBEDDED_IMAGE_PROJECTION).lean();
     if (!certificate) {
       certificate = await syncRetirementTransaction(txHash);
     }
@@ -200,7 +173,7 @@ router.get('/token/:tokenId', async (req, res) => {
       chainId: Number(process.env.CHAIN_ID || 43113),
       certificateContractAddress: process.env.GREEN_CERTIFICATE_SBT_ADDRESS?.toLowerCase(),
       certificateTokenId: tokenId,
-    });
+    }).select(EMBEDDED_IMAGE_PROJECTION).lean();
 
     if (!certificate) {
       return res.status(404).json({ error: 'Không tìm thấy chứng chỉ' });
@@ -227,7 +200,7 @@ router.get('/token/:tokenId/share', async (req, res) => {
       chainId: Number(process.env.CHAIN_ID || 43113),
       certificateContractAddress: process.env.GREEN_CERTIFICATE_SBT_ADDRESS?.toLowerCase(),
       certificateTokenId: tokenId,
-    }).lean();
+    }).select(EMBEDDED_IMAGE_PROJECTION).lean();
   } catch (error) {
     // Without the record the page still forwards to verification, just with a plainer preview.
     console.warn('⚠️ Không đọc được chứng chỉ cho trang chia sẻ:', error.message);
@@ -293,7 +266,7 @@ router.get('/wallet/:address', async (req, res) => {
     const certificates = await Certificate.find({
       ownerAddress: address,
       status: { $in: ['ACTIVE', 'REVOKED'] },
-    }).sort({ mintedAt: -1, createdAt: -1 });
+    }).sort({ mintedAt: -1, createdAt: -1 }).select(EMBEDDED_IMAGE_PROJECTION).lean();
 
     res.status(200).json(certificates.map(serializeCertificate));
   } catch (error) {
