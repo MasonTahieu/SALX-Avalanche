@@ -20,6 +20,7 @@ function DcCardSkeleton() {
         <div className="market-dc-skeleton-line" style={{ height: 31, width: '60%' }} />
         <div className="market-dc-skeleton-line" style={{ height: 29, width: '45%' }} />
         <div className="market-dc-skeleton-line" style={{ height: 26, width: '100%' }} />
+        <div className="market-dc-skeleton-line" style={{ height: 16, width: '100%' }} />
         <div className="market-dc-skeleton-line" style={{ height: 38, width: '100%' }} />
       </div>
     </div>

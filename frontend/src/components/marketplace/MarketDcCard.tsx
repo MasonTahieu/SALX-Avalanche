@@ -2,6 +2,8 @@ import { useState, type CSSProperties } from 'react';
 import type { Listing, Project } from '../../types/domain';
 import { ipfsToHttp, projectDisplay } from '../../lib/projectMeta';
 import { env } from '../../config/env';
+import { product } from '../../config/product';
+import { formatCO2 } from '../../lib/format';
 import { certBadge } from './certBadge';
 import { LazyDocumentViewer, openInPlace, toViewerDocuments } from '../documents/LazyDocumentViewer';
 
@@ -134,8 +136,16 @@ export function MarketDcCard({ listing, project, onCheckout }: MarketDcCardProps
               disabled={disabled || amount >= listing.remainingAmount}
               style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, width: 24, height: 24, borderRadius: 4, border: '1px solid var(--bd)', background: 'var(--surf2)', color: 'var(--ink)', cursor: !disabled && amount < listing.remainingAmount ? 'pointer' : 'not-allowed', opacity: !disabled && amount < listing.remainingAmount ? 1 : 0.35, flexShrink: 0 }}
             >+</button>
-            <span style={{ fontFamily: MONO, fontSize: 10, color: 'var(--mut)', marginLeft: 'auto', whiteSpace: 'nowrap' }}>
-              = {totalEth} {env.nativeSymbol}
+            {/* What the chosen quantity retires, so buyers need not convert SAL to kg themselves. */}
+            <span style={{ fontFamily: MONO, fontSize: 11, color: 'var(--ink)', marginLeft: 'auto', whiteSpace: 'nowrap' }}>
+              = {formatCO2(amount * product.fallbackKgPerSAL)}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, marginTop: 8 }}>
+            <span style={{ fontFamily: MONO, fontSize: 10, color: 'var(--mut)', letterSpacing: '.1em', textTransform: 'uppercase' }}>TOTAL</span>
+            <span style={{ fontFamily: MONO, fontSize: 12, color: 'var(--g-text)', whiteSpace: 'nowrap' }}>
+              {totalEth} {env.nativeSymbol}
             </span>
           </div>
 
