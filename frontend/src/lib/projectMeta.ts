@@ -1,8 +1,6 @@
 import type { Project } from '../types/domain';
 import { env } from '../config/env';
 
-const property = (project: Project, key: string) => project.projectMetadata?.properties?.[key];
-
 export function projectDisplay(project?: Project) {
   const meta = project?.projectMetadata || {};
   const props = meta.properties || {};

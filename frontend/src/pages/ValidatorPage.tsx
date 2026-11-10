@@ -260,7 +260,6 @@ export function ValidatorPage() {
                   <div style={{ fontFamily: MONO, fontSize: 8, letterSpacing: '.1em', color: 'var(--mut)', marginBottom: 10 }}>MRV DOCUMENTS</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                     {rawDocs.map((doc, i) => {
-                      const uri = toUri(doc);
                       const label = toLabel(doc, i);
                       const href = toHref(doc);
                       return (

@@ -155,7 +155,7 @@ export function PortfolioPage() {
               <div style={{ fontFamily: MONO, fontSize: 10, color: 'var(--mut)', padding: '28px 0', textAlign: 'center', letterSpacing: '.08em' }}>NO SAL TOKENS HELD</div>
             ) : (
               <div style={{ border: '1px solid var(--bd-mid)', borderRadius: 10, overflow: 'hidden' }}>
-                {data.balances.map((row, i) => (
+                {data.balances.map((row) => (
                   <div key={row.project._id}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', alignItems: 'center', gap: 20, padding: '14px 16px', borderBottom: '1px solid var(--bd-mid)' }}>
                       <div>

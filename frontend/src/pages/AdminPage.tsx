@@ -17,7 +17,6 @@ const GREEN = '#2dc922';
 const INK = '#ede7dc';
 const MUT = '#9ea5a8';
 const RED = '#e05252';
-const ORG = '#e8913c';
 const GOLD = '#e7c765';
 const PAGE_INK = 'var(--ink)';
 const PAGE_MUT = 'var(--mut)';
