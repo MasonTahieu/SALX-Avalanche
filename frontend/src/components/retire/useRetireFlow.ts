@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { backend } from '../../services/backend';
 import { retireSAL, retirementConfig, salBalance } from '../../services/blockchain';
 import { useWallet } from '../../contexts/WalletContext';
-import type { Certificate, Project } from '../../types/domain';
+import type { Certificate, MintedCertificate, Project } from '../../types/domain';
 import { product } from '../../config/product';
 import { errorMessage } from '../../lib/errors';
 
@@ -45,6 +45,8 @@ export interface UseRetireFlowResult {
   error: string | null;
   clearError: () => void;
   certState: CertState;
+  /** The SBT as the retirement receipt reports it, shown until the backend has recorded it. */
+  minted: MintedCertificate | null;
   toggleSource: (row: HoldingRow) => void;
   setAmount: (projectId: number, amount: number) => void;
   run: () => Promise<void>;
@@ -61,6 +63,7 @@ export function useRetireFlow(): UseRetireFlowResult {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [certState, setCertState] = useState<CertState>({ phase: 'idle' });
+  const [minted, setMinted] = useState<MintedCertificate | null>(null);
 
   // O(n) parallel balance fetches — one network round-trip per project
   const loadHoldings = useCallback(async () => {
@@ -150,7 +153,7 @@ export function useRetireFlow(): UseRetireFlowResult {
     await fetchCertAfterTx(txHash);
   }, [certState, fetchCertAfterTx]);
 
-  // Auto-poll every 5 s while the certificate is being indexed.
+  // Auto-poll every 2 s while the certificate is being indexed.
   // Stops as soon as the backend returns the certificate or the component unmounts.
   useEffect(() => {
     if (certState.phase !== 'pending') return;
@@ -182,6 +185,7 @@ export function useRetireFlow(): UseRetireFlowResult {
       );
 
       setSelection({});
+      setMinted(tx.minted ?? null);
       // Update cert state immediately after the tx so the UI transitions without
       // waiting for the holdings refresh (which makes several sequential RPC calls)
       await fetchCertAfterTx(tx.txHash);
@@ -196,6 +200,7 @@ export function useRetireFlow(): UseRetireFlowResult {
   const resetAfterRetirement = useCallback(() => {
     setSelection({});
     setCertState({ phase: 'idle' });
+    setMinted(null);
     setError(null);
   }, []);
 
@@ -211,6 +216,7 @@ export function useRetireFlow(): UseRetireFlowResult {
     error,
     clearError: () => setError(null),
     certState,
+    minted,
     toggleSource,
     setAmount,
     run,

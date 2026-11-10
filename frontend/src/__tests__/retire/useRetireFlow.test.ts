@@ -185,7 +185,7 @@ describe('useRetireFlow', () => {
   describe('run()', () => {
     it('calls createCertificateMetadata then retireSAL with correct args', async () => {
       mockCreateCertMeta.mockResolvedValue(CERT_META_RESP);
-      mockRetireSAL.mockResolvedValue({ txHash: '0xTX', blockNumber: 42 });
+      mockRetireSAL.mockResolvedValue({ txHash: '0xTX', blockNumber: 42, minted: null });
       mockCertByTx.mockResolvedValue(FULL_CERT as any);
 
       const { result } = renderHook(() => useRetireFlow());
@@ -210,9 +210,32 @@ describe('useRetireFlow', () => {
       );
     });
 
+    it('exposes the SBT from the receipt while the backend catches up, until reset', async () => {
+      const minted = {
+        tokenId: 7, owner: '0xuser', projectId: 1, salAmount: 5, co2Kg: 50,
+        certificateURI: 'ipfs://QmCert', txHash: '0xTX',
+      };
+      mockCreateCertMeta.mockResolvedValue(CERT_META_RESP);
+      mockRetireSAL.mockResolvedValue({ txHash: '0xTX', blockNumber: 42, minted });
+      mockCertByTx.mockResolvedValue({ status: 'PENDING' });
+
+      const { result } = renderHook(() => useRetireFlow());
+      await waitFor(() => expect(result.current.holdings).toHaveLength(2));
+
+      act(() => result.current.toggleSource(result.current.holdings[0]));
+      act(() => result.current.setAmount(1, 5));
+      await act(async () => { await result.current.run(); });
+
+      expect(result.current.certState.phase).toBe('pending');
+      expect(result.current.minted).toEqual(minted);
+
+      act(() => result.current.resetAfterRetirement());
+      expect(result.current.minted).toBeNull();
+    });
+
     it('sets certState to found when cert is immediately indexed', async () => {
       mockCreateCertMeta.mockResolvedValue(CERT_META_RESP);
-      mockRetireSAL.mockResolvedValue({ txHash: '0xTX', blockNumber: 42 });
+      mockRetireSAL.mockResolvedValue({ txHash: '0xTX', blockNumber: 42, minted: null });
       mockCertByTx.mockResolvedValue(FULL_CERT as any);
 
       const { result } = renderHook(() => useRetireFlow());
@@ -228,7 +251,7 @@ describe('useRetireFlow', () => {
 
     it('sets certState to pending when cert is not indexed yet', async () => {
       mockCreateCertMeta.mockResolvedValue(CERT_META_RESP);
-      mockRetireSAL.mockResolvedValue({ txHash: '0xTX', blockNumber: 42 });
+      mockRetireSAL.mockResolvedValue({ txHash: '0xTX', blockNumber: 42, minted: null });
       mockCertByTx.mockResolvedValue({ status: 'PENDING' } as any);
 
       const { result } = renderHook(() => useRetireFlow());
@@ -244,7 +267,7 @@ describe('useRetireFlow', () => {
 
     it('sets certState to pending when certificateByTx throws', async () => {
       mockCreateCertMeta.mockResolvedValue(CERT_META_RESP);
-      mockRetireSAL.mockResolvedValue({ txHash: '0xTX', blockNumber: 42 });
+      mockRetireSAL.mockResolvedValue({ txHash: '0xTX', blockNumber: 42, minted: null });
       mockCertByTx.mockRejectedValue(new Error('not found'));
 
       const { result } = renderHook(() => useRetireFlow());
@@ -271,7 +294,7 @@ describe('useRetireFlow', () => {
 
     it('clears selection after successful retirement', async () => {
       mockCreateCertMeta.mockResolvedValue(CERT_META_RESP);
-      mockRetireSAL.mockResolvedValue({ txHash: '0xTX', blockNumber: 42 });
+      mockRetireSAL.mockResolvedValue({ txHash: '0xTX', blockNumber: 42, minted: null });
       mockCertByTx.mockResolvedValue(FULL_CERT as any);
 
       const { result } = renderHook(() => useRetireFlow());
@@ -286,7 +309,7 @@ describe('useRetireFlow', () => {
   describe('reloadCertificate', () => {
     it('transitions from pending to found when cert becomes available', async () => {
       mockCreateCertMeta.mockResolvedValue(CERT_META_RESP);
-      mockRetireSAL.mockResolvedValue({ txHash: '0xTX', blockNumber: 42 });
+      mockRetireSAL.mockResolvedValue({ txHash: '0xTX', blockNumber: 42, minted: null });
       mockCertByTx
         .mockResolvedValueOnce({ status: 'PENDING' } as any)
         .mockResolvedValueOnce(FULL_CERT as any);
@@ -311,7 +334,7 @@ describe('useRetireFlow', () => {
   describe('resetAfterRetirement', () => {
     it('resets selection, certState, and error', async () => {
       mockCreateCertMeta.mockResolvedValue(CERT_META_RESP);
-      mockRetireSAL.mockResolvedValue({ txHash: '0xTX', blockNumber: 42 });
+      mockRetireSAL.mockResolvedValue({ txHash: '0xTX', blockNumber: 42, minted: null });
       mockCertByTx.mockResolvedValue(FULL_CERT as any);
 
       const { result } = renderHook(() => useRetireFlow());

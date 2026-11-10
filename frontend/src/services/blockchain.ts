@@ -1,5 +1,6 @@
 import type { ContractRunner, Eip1193Provider } from 'ethers';
 import { assertPublicContractConfig, env } from '../config/env';
+import type { MintedCertificate } from '../types/domain';
 
 // ethers (~700 KB with its crypto deps) and the contract ABIs are loaded on
 // first use instead of at startup, so pages render before a wallet is needed.
@@ -221,9 +222,15 @@ async function signerContracts() {
   return { signer, ...(await contractsFor(signer)) };
 }
 
+let publicProvider: Promise<import('ethers').JsonRpcProvider> | null = null;
+const loadPublicProvider = () => (publicProvider ??= loadEthers().then(({ JsonRpcProvider }) =>
+  new JsonRpcProvider(env.rpcUrl, env.chainId, { staticNetwork: true })));
+
+// Reads go through the connected wallet. Before one is connected they use the
+// public RPC, so visitors without a wallet still see on-chain fees.
 async function readContracts() {
   assertPublicContractConfig();
-  return contractsFor(await getBrowserProvider());
+  return contractsFor(activeProvider ? await getBrowserProvider() : await loadPublicProvider());
 }
 
 export async function waitTx(tx: any) {
@@ -234,6 +241,11 @@ export async function waitTx(tx: any) {
 export async function submitProject(projectURI: string, proposedCO2Kg: number, valueWei: string) {
   const { marketplace } = await signerContracts();
   return waitTx(await marketplace.submitProject(projectURI, proposedCO2Kg, { value: BigInt(valueWei) }));
+}
+
+export async function isMarketplaceApproved(owner: string) {
+  const { sal } = await readContracts();
+  return Boolean(await sal.isApprovedForAll(owner, env.marketplaceAddress));
 }
 
 export async function ensureMarketplaceApproval(owner: string) {
@@ -290,7 +302,50 @@ export async function retireSAL(
   await ensureMarketplaceApproval(owner);
   const { marketplace } = await signerContracts();
   const fee = await marketplace.certificateMintFee();
-  return waitTx(await marketplace.retireSAL(projectIds, salAmounts, certificateURI, deadline, signature, { value: fee }));
+  const tx = await marketplace.retireSAL(projectIds, salAmounts, certificateURI, deadline, signature, { value: fee });
+  const receipt = await tx.wait(1);
+  let minted: MintedCertificate | null = null;
+  try {
+    minted = await mintedCertificateIn(receipt);
+  } catch {
+    // The backend still records the certificate; the page then waits for it.
+  }
+  return { txHash: receipt.hash as string, blockNumber: Number(receipt.blockNumber), minted };
+}
+
+interface ReceiptLike {
+  hash: string;
+  logs: ReadonlyArray<{ address: string; topics: ReadonlyArray<string>; data: string }>;
+}
+
+/**
+ * The certificate minted by a retirement, read from its receipt, so it can be
+ * shown at once instead of after the backend has recorded it.
+ */
+export async function mintedCertificateIn(receipt: ReceiptLike): Promise<MintedCertificate | null> {
+  const [{ Interface }, abi] = await Promise.all([loadEthers(), loadAbis()]);
+  const sbt = new Interface(abi.certificate);
+  const sbtAddress = env.certificateAddress.toLowerCase();
+  for (const log of receipt.logs) {
+    if (log.address.toLowerCase() !== sbtAddress) continue;
+    let event;
+    try {
+      event = sbt.parseLog({ topics: [...log.topics], data: log.data });
+    } catch {
+      continue;
+    }
+    if (event?.name !== 'CertificateMinted') continue;
+    return {
+      tokenId: Number(event.args.tokenId),
+      owner: String(event.args.retirer).toLowerCase(),
+      projectId: Number(event.args.projectId),
+      salAmount: Number(event.args.retiredSALAmount),
+      co2Kg: Number(event.args.retiredCO2Kg),
+      certificateURI: String(event.args.certificateURI),
+      txHash: receipt.hash,
+    };
+  }
+  return null;
 }
 
 export async function retirementConfig() {

@@ -95,6 +95,18 @@ export interface Certificate {
   metadata?: Record<string, any>;
 }
 
+/** A certificate as the retirement transaction's CertificateMinted event reports it. */
+export interface MintedCertificate {
+  tokenId: number;
+  owner: string;
+  /** 0 when the certificate covers more than one project. */
+  projectId: number;
+  salAmount: number;
+  co2Kg: number;
+  certificateURI: string;
+  txHash: string;
+}
+
 export interface ProofActivity {
   type: string;
   count: number;

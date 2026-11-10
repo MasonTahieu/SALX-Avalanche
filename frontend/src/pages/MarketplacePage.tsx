@@ -3,6 +3,7 @@ import { backend } from '../services/backend';
 import type { Listing, Project } from '../types/domain';
 import { MarketDcFilters } from '../components/marketplace/MarketDcFilters';
 import { MarketDcCard } from '../components/marketplace/MarketDcCard';
+import { CheckoutDialog } from '../components/marketplace/CheckoutDialog';
 import { useMarketFilters, applyDcFilters, deriveFilterOptions } from '../components/marketplace/useMarketFilters';
 
 const SKELETON_COUNT = 6;
@@ -30,6 +31,9 @@ export function MarketplacePage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  // Held here rather than in the card: a sold-out listing drops out of the grid
+  // after the refresh, and the checkout must stay open until it is finished.
+  const [checkout, setCheckout] = useState<{ listing: Listing; amount: number } | null>(null);
   const { pending, updatePending, active, apply, clear } = useMarketFilters();
 
   // Skeletons only on the first load or a retry. A refresh after a purchase
@@ -127,7 +131,7 @@ export function MarketplacePage() {
                     key={listing.listingId}
                     listing={listing}
                     project={projectMap.get(listing.projectId)}
-                    onChanged={refresh}
+                    onCheckout={(amount) => setCheckout({ listing, amount })}
                   />
                 ))}
               </div>
@@ -135,6 +139,16 @@ export function MarketplacePage() {
           </section>
         </div>
       </div>
+
+      {checkout && (
+        <CheckoutDialog
+          listing={checkout.listing}
+          project={projectMap.get(checkout.listing.projectId)}
+          amount={checkout.amount}
+          onClose={() => setCheckout(null)}
+          onPurchased={refresh}
+        />
+      )}
 
       {/* Footer */}
       <div style={{ borderTop: '1px solid var(--bd-soft)', fontFamily: MONO, fontSize: 7, letterSpacing: '.13em', textTransform: 'uppercase', color: 'var(--faint)', padding: '20px 34px', textAlign: 'center' }}>

@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { certificateFromReceipt } from '../lib/mintedCertificate';
 import { useWallet } from '../contexts/WalletContext';
 import type { Project } from '../types/domain';
 import { useRetireFlow } from '../components/retire/useRetireFlow';
@@ -73,6 +74,16 @@ export function RetirePage() {
   const [retiredProject, setRetiredProject] = useState<Project | null>(null);
 
   const selectedProjects = flow.selectedRows.map(r => r.project.projectName ?? `#${r.project.onChainProjectId}`);
+
+  // The receipt names the new SBT at once; the recorded certificate (with its
+  // artwork) replaces it when the backend has it.
+  const receiptCertificate = useMemo(
+    () => (flow.minted ? certificateFromReceipt(flow.minted, retiredProject?.projectName) : null),
+    [flow.minted, retiredProject],
+  );
+  const shownCertificate = flow.certState.phase === 'found'
+    ? flow.certState.certificate
+    : flow.certState.phase === 'pending' ? receiptCertificate : null;
 
   const handleRetire = async () => {
     // Capture project before flow.run() clears selectedRows
@@ -204,12 +215,16 @@ export function RetirePage() {
               ownerAddress={wallet.address}
             />
           )}
-          {flow.certState.phase === 'pending' && (
+          {flow.certState.phase === 'pending' && !receiptCertificate && (
             <CertPending txHash={flow.certState.txHash} onReload={flow.reloadCertificate} />
           )}
-          {flow.certState.phase === 'found' && (
+          {shownCertificate && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <CertificateCard certificate={flow.certState.certificate} project={retiredProject ?? undefined} />
+              <CertificateCard
+                certificate={shownCertificate}
+                project={retiredProject ?? undefined}
+                preparing={flow.certState.phase !== 'found'}
+              />
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, alignSelf: 'flex-end' }}>
                 <Link
                   to="/dashboard?tab=certificates"

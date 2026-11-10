@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Certificate, Project } from '../../types/domain';
-import { formatDate, shortAddress } from '../../lib/format';
+import { formatCO2, formatDate, shortAddress } from '../../lib/format';
 import { env } from '../../config/env';
 import { certificateImageUrl } from '../../lib/certificateImage';
 import { CertificateLightbox } from './CertificateLightbox';
@@ -24,7 +24,18 @@ function DetailRow({ label, value, href, mono }: { label: string; value: string;
   );
 }
 
-export function CertificateCard({ certificate, project, eager = false }: { certificate: Certificate; project?: Project; eager?: boolean }) {
+interface CertificateCardProps {
+  certificate: Certificate;
+  project?: Project;
+  eager?: boolean;
+  /**
+   * Built from the retirement receipt: the SBT exists, but the backend has not
+   * recorded it yet, so there is no artwork or download to show.
+   */
+  preparing?: boolean;
+}
+
+export function CertificateCard({ certificate, project, eager = false, preparing = false }: CertificateCardProps) {
   const [imageState, setImageState] = useState<ImageState>('loading');
   const [copied, setCopied] = useState(false);
   const [zoomed, setZoomed] = useState(false);
@@ -32,8 +43,8 @@ export function CertificateCard({ certificate, project, eager = false }: { certi
   const tokenId = certificate.certificateTokenId;
   // Rendered by the backend in the current certificate design from the stored
   // certificate data; the download variant is a 2000 px attachment.
-  const imageUrl = tokenId ? certificateImageUrl(tokenId) : null;
-  const downloadUrl = tokenId ? certificateImageUrl(tokenId, 'download') : null;
+  const imageUrl = tokenId && !preparing ? certificateImageUrl(tokenId) : null;
+  const downloadUrl = tokenId && !preparing ? certificateImageUrl(tokenId, 'download') : null;
   const imageAlt = `SALX carbon retirement certificate SBT #${tokenId}: ${certificate.retiredCO2Kg.toLocaleString('en-US')} kg CO₂e retired`;
 
   const pMeta = (project?.projectMetadata as any) ?? null;
@@ -83,6 +94,20 @@ export function CertificateCard({ certificate, project, eager = false }: { certi
             />
             {imageState === 'ready' && <span className="cert-zoom-trigger__hint" aria-hidden="true">CLICK TO ZOOM</span>}
           </button>
+        ) : preparing ? (
+          <div style={{ aspectRatio: '1 / 1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, textAlign: 'center', padding: 24, background: 'var(--surf2)', border: '1px solid rgba(45,201,34,.22)', borderRadius: 6 }}>
+            <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--g-text)' }}>SBT #{tokenId} · on-chain</span>
+            <strong style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(26px, 4vw, 34px)', fontWeight: 800, lineHeight: 1.05, color: 'var(--ink)' }}>
+              {formatCO2(certificate.retiredCO2Kg, 'en-US')}
+            </strong>
+            <span style={{ fontFamily: MONO, fontSize: 12, color: 'var(--mut)' }}>
+              {certificate.retiredTokenAmount.toLocaleString('en-US')} SAL retired
+            </span>
+            <span role="status" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, fontSize: 12, lineHeight: 1.5, color: 'var(--mut)' }}>
+              <span aria-hidden="true" style={{ flex: 'none', width: 10, height: 10, border: '2px solid var(--g)', borderRightColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+              Drawing the certificate artwork, usually a few seconds
+            </span>
+          </div>
         ) : (
           <div style={{ aspectRatio: '1 / 1', display: 'grid', placeItems: 'center', textAlign: 'center', padding: 24, background: 'var(--surf2)', borderRadius: 6, fontSize: 13, lineHeight: 1.6, color: 'var(--mut)' }}>
             {imageUrl

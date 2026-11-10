@@ -1,7 +1,6 @@
 import { useState, type CSSProperties } from 'react';
 import type { Listing, Project } from '../../types/domain';
 import { ipfsToHttp, projectDisplay } from '../../lib/projectMeta';
-import { useBuyListing } from './useBuyListing';
 import { env } from '../../config/env';
 import { certBadge } from './certBadge';
 import { LazyDocumentViewer, openInPlace, toViewerDocuments } from '../documents/LazyDocumentViewer';
@@ -19,11 +18,15 @@ const clampLines = (lines: number): CSSProperties => ({
 export interface MarketDcCardProps {
   listing: Listing;
   project?: Project;
-  onChanged: () => void;
+  /** Opens the checkout for this listing with the chosen quantity. */
+  onCheckout: (amount: number) => void;
 }
 
-export function MarketDcCard({ listing, project, onChanged }: MarketDcCardProps) {
-  const { buy, busy, message, amount, setAmount } = useBuyListing(listing, onChanged);
+export function MarketDcCard({ listing, project, onCheckout }: MarketDcCardProps) {
+  const [quantity, setQuantity] = useState(1);
+  // A refresh can lower what is left, so the chosen quantity is capped when used.
+  const amount = Math.max(1, Math.min(listing.remainingAmount, quantity));
+  const setAmount = (value: number) => setQuantity(Math.max(1, Math.min(listing.remainingAmount, value)));
   const [docsOpen, setDocsOpen] = useState(false);
 
   const projectName = project?.projectName || `SAL Project #${listing.projectId}`;
@@ -34,7 +37,7 @@ export function MarketDcCard({ listing, project, onChanged }: MarketDcCardProps)
   const gy = 10 + (listing.projectId * 37) % 50;
   const metaText = [details.projectType, details.location].filter(Boolean).join(' · ');
   const isBlacklisted = project?.blacklisted ?? false;
-  const disabled = busy || isBlacklisted;
+  const disabled = isBlacklisted;
   const canChooseQty = listing.remainingAmount > 1;
   const totalEth = (parseFloat(listing.pricePerUnitETH) * amount).toPrecision(4);
 
@@ -45,7 +48,7 @@ export function MarketDcCard({ listing, project, onChanged }: MarketDcCardProps)
   const mrvHref = firstMrv ? ipfsToHttp(firstMrv.uri, firstMrv.name) : null;
   const mrvLabel = mrvDocs.length > 1 ? `IPFS MRV (${mrvDocs.length})` : 'IPFS MRV';
 
-  const buyLabel = isBlacklisted ? 'BLACKLISTED' : busy ? 'BUYING…' : `BUY ${amount} SAL ↗`;
+  const buyLabel = isBlacklisted ? 'BLACKLISTED' : 'BUY & GET CERTIFICATE';
 
   return (
     <article
@@ -137,7 +140,8 @@ export function MarketDcCard({ listing, project, onChanged }: MarketDcCardProps)
           </div>
 
           <button
-            onClick={buy}
+            type="button"
+            onClick={() => onCheckout(amount)}
             disabled={disabled}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -153,12 +157,6 @@ export function MarketDcCard({ listing, project, onChanged }: MarketDcCardProps)
             {buyLabel}
           </button>
         </div>
-
-        {message && (
-          <div style={{ marginTop: 6, fontFamily: MONO, fontSize: 11, color: 'var(--mut)', wordBreak: 'break-all' }}>
-            {message}
-          </div>
-        )}
       </div>
 
       {docsOpen && (
