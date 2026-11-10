@@ -5,10 +5,10 @@ import { env } from '../../config/env';
 import { product } from '../../config/product';
 import { formatCO2 } from '../../lib/format';
 import { certBadge } from './certBadge';
+import { ProjectCover } from '../project/ProjectCover';
 import { LazyDocumentViewer, openInPlace, toViewerDocuments } from '../documents/LazyDocumentViewer';
 
 const MONO = "'IBM Plex Mono', 'JetBrains Mono', monospace";
-const SYNE = "'Syne', sans-serif";
 
 const clampLines = (lines: number): CSSProperties => ({
   display: '-webkit-box',
@@ -34,9 +34,6 @@ export function MarketDcCard({ listing, project, onCheckout }: MarketDcCardProps
   const projectName = project?.projectName || `SAL Project #${listing.projectId}`;
   const details = projectDisplay(project);
   const badge = certBadge(details.methodology);
-  // Procedural cover: shift radial accent by project ID so cards look distinct
-  const gx = 30 + (listing.projectId * 23) % 50;
-  const gy = 10 + (listing.projectId * 37) % 50;
   const metaText = [details.projectType, details.location].filter(Boolean).join(' · ');
   const isBlacklisted = project?.blacklisted ?? false;
   const disabled = isBlacklisted;
@@ -57,15 +54,10 @@ export function MarketDcCard({ listing, project, onCheckout }: MarketDcCardProps
       className="market-dc-card"
       style={{ display: 'flex', flexDirection: 'column', background: 'var(--surf)', border: '1px solid var(--bd)', borderRadius: 12, padding: 10, transition: 'transform .18s ease,border-color .18s ease' }}
     >
-      {/* Cover — procedural placeholder, no IPFS image */}
-      <div style={{ position: 'relative', aspectRatio: '1.16 / 1', overflow: 'hidden', borderRadius: 8 }}>
-        <div style={{ display: 'flex', height: '100%', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: `radial-gradient(circle at ${gx}% ${gy}%,rgba(45,201,34,.32),transparent 55%),linear-gradient(135deg,#031a13,#0a3d31)`, color: '#caffec' }}>
-          <span style={{ fontFamily: SYNE, fontWeight: 800, fontSize: 22, letterSpacing: '.14em' }}>SALX</span>
-          <small style={{ fontFamily: MONO, fontSize: 9, marginTop: 5, opacity: .6, letterSpacing: '.12em' }}>
-            PROJECT #{listing.projectId}
-          </small>
-        </div>
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,transparent 45%,rgba(5,6,5,.82) 100%)', pointerEvents: 'none' }} />
+      {/* Cover: an illustration of the project's kind */}
+      <div style={{ position: 'relative', aspectRatio: '1.16 / 1', overflow: 'hidden', borderRadius: 8, background: 'linear-gradient(135deg,#031a13,#0a3d31)' }}>
+        <ProjectCover project={project} projectId={listing.projectId} />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,transparent 62%,rgba(5,6,5,.5) 100%)', pointerEvents: 'none' }} />
         <span style={{ position: 'absolute', left: 8, top: 8, zIndex: 2, fontFamily: MONO, fontSize: 10, letterSpacing: '.04em', textTransform: 'uppercase', fontWeight: 500, padding: '4px 7px', borderRadius: 999, background: badge.bg, color: badge.color }}>
           {badge.label}
         </span>

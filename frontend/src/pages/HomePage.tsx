@@ -4,6 +4,7 @@ import { env } from '../config/env';
 import { backend } from '../services/backend';
 import { projectDisplay } from '../lib/projectMeta';
 import { certBadge } from '../components/marketplace/certBadge';
+import { ProjectCover } from '../components/project/ProjectCover';
 import type { Listing, Project } from '../types/domain';
 
 function Reveal({ children, delay = 0 }: { children: ReactNode; delay?: number }) {
@@ -34,9 +35,11 @@ interface EditionCard {
   badgeBg: string;
   badgeColor: string;
   artBg: string;
+  project: Project;
+  projectId: number;
 }
 
-// Card art, picked by project ID so each project keeps the same colour.
+// Shown behind the cover illustration while it loads, picked by project ID.
 const ART_BACKGROUNDS = [
   'linear-gradient(155deg,#0a1c13 0%,#162a1c 100%)',
   'linear-gradient(155deg,#0c1e22 0%,#0e2830 100%)',
@@ -73,6 +76,8 @@ function buildEditions(listings: Listing[], projects: Project[]): EditionCard[] 
         badgeBg: badge.bg,
         badgeColor: badge.color,
         artBg: ART_BACKGROUNDS[listing.projectId % ART_BACKGROUNDS.length],
+        project,
+        projectId: listing.projectId,
       };
     });
 }
@@ -250,7 +255,9 @@ export function HomePage() {
                 style={{ ...EDITION_CARD_STYLE, cursor: 'pointer' }}
               >
                 <div style={{ position: 'relative', aspectRatio: '1.18/1', background: ed.artBg, overflow: 'hidden', borderRadius: 12 }}>
-                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,transparent 34%,rgba(5,6,5,.88) 100%)' }} />
+                  <ProjectCover project={ed.project} projectId={ed.projectId} />
+                  {/* Light shading at the foot only: the title sits below the art, not on it. */}
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,transparent 62%,rgba(5,6,5,.5) 100%)' }} />
                   <span style={{ position: 'absolute', left: 10, top: 10, zIndex: 2, fontFamily: MONO, fontSize: 8, letterSpacing: '.04em', textTransform: 'uppercase', fontWeight: 500, padding: '5px 8px', borderRadius: 999, background: ed.badgeBg, color: ed.badgeColor }}>
                     {ed.badge}
                   </span>
