@@ -5,16 +5,23 @@ import { env } from '../../config/env';
 import type { InjectedEthereum } from '../../services/blockchain';
 
 export interface PrivyBridgeProps {
-  /** `login` opens Privy's sign-in; `restore` only resumes an existing session. */
-  mode: 'login' | 'restore';
+  /**
+   * `login` opens Privy's sign-in; `restore` only resumes an existing session;
+   * `resume` lets Privy finish a Google sign-in after the redirect back to the site.
+   */
+  mode: 'login' | 'restore' | 'resume';
+  /** Changes on every sign-in click, so a retry starts from a clean state. */
+  attempt: number;
   onConnected: (provider: InjectedEthereum) => void;
   onStopped: (message: string | null) => void;
   registerLogout: (logout: (() => Promise<void>) | null) => void;
 }
 
+type PrivySessionProps = Omit<PrivyBridgeProps, 'attempt'>;
+
 const targetChain = env.chainId === avalanche.id ? avalanche : avalancheFuji;
 
-function PrivySession({ mode, onConnected, onStopped, registerLogout }: PrivyBridgeProps) {
+function PrivySession({ mode, onConnected, onStopped, registerLogout }: PrivySessionProps) {
   const { ready, authenticated, logout } = usePrivy();
   const { ready: walletsReady, wallets } = useWallets();
   const loginAsked = useRef(false);
@@ -37,6 +44,9 @@ function PrivySession({ mode, onConnected, onStopped, registerLogout }: PrivyBri
       onStopped(null);
       return;
     }
+    // Privy shows its own progress and error screens for the redirect, and
+    // reports a failed or abandoned sign-in through onError.
+    if (mode === 'resume') return;
     if (!loginAsked.current) {
       loginAsked.current = true;
       login();
@@ -64,7 +74,7 @@ function PrivySession({ mode, onConnected, onStopped, registerLogout }: PrivyBri
   return null;
 }
 
-export function PrivyBridge(props: PrivyBridgeProps) {
+export function PrivyBridge({ attempt, ...session }: PrivyBridgeProps) {
   return (
     <PrivyProvider
       appId={env.privyAppId}
@@ -77,7 +87,7 @@ export function PrivyBridge(props: PrivyBridgeProps) {
         supportedChains: [targetChain],
       }}
     >
-      <PrivySession {...props} />
+      <PrivySession key={attempt} {...session} />
     </PrivyProvider>
   );
 }

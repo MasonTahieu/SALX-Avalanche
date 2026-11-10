@@ -13,6 +13,7 @@ import {
 } from '../services/blockchain';
 import { env } from '../config/env';
 import { errorMessage } from '../lib/errors';
+import { isPrivyOAuthReturn } from '../lib/privyRedirect';
 import { PrivyHost } from '../components/wallet/PrivyHost';
 
 interface WalletState {
@@ -71,7 +72,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [balance, setBalance] = useState<string | null>(null);
   const [role, setRoleState] = useState<'user' | 'validator'>(savedRole);
   // Privy stays mounted while its wallet is in use, because it handles the signing.
-  const [privyMode, setPrivyMode] = useState<'login' | 'restore' | null>(null);
+  const [privyMode, setPrivyMode] = useState<'login' | 'restore' | 'resume' | null>(null);
+  const [privyAttempt, setPrivyAttempt] = useState(0);
   const privyLogout = useRef<(() => Promise<void>) | null>(null);
 
   const setRole = useCallback((r: 'user' | 'validator') => {
@@ -89,6 +91,14 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }, [address, activeInjectedProvider]);
 
   const refresh = useCallback(async () => {
+    // Back from Google: the page reloaded mid sign-in, so start Privy at once
+    // and let it finish. Only buyers can choose email or Google sign-in.
+    if (env.privyAppId && isPrivyOAuthReturn(window.location.search)) {
+      setRole('user');
+      setConnecting(true);
+      setPrivyMode('resume');
+      return;
+    }
     const kind = walletKind || savedWalletKind();
     // Only auto-restore if the user explicitly connected in this browser session.
     // Without this gate, eth_accounts silently reconnects on every page load
@@ -116,7 +126,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       setChainId(null);
       setBalance(null);
     }
-  }, [walletKind]);
+  }, [walletKind, setRole]);
 
   const adoptConnection = useCallback(async (result: Awaited<ReturnType<typeof connectWallet>>) => {
     setAddress(result.address);
@@ -162,6 +172,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     setConnecting(true);
     setError(null);
     if (kind === 'privy') {
+      setPrivyAttempt(n => n + 1);
       setPrivyMode('login');
       return;
     }
@@ -289,6 +300,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       {privyMode && (
         <PrivyHost
           mode={privyMode}
+          attempt={privyAttempt}
           onConnected={handlePrivyConnected}
           onStopped={handlePrivyStopped}
           registerLogout={registerPrivyLogout}
