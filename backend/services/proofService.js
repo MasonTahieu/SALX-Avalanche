@@ -3,7 +3,8 @@ const { ethers } = require('ethers');
 
 const CATEGORY_ORDER = ['MINT', 'BUY', 'RETIRE'];
 const MAX_EVENTS = 1000;
-const RECENT_LIMIT = 12;
+// The Proof page shows these in a scrolling frame, so older ones stay reachable.
+const RECENT_LIMIT = 50;
 const FEE_SAMPLES_PER_CATEGORY = 5;
 const BLOCK_TIME_SAMPLE = 100;
 

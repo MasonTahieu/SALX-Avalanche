@@ -113,11 +113,16 @@ export function ProofPage() {
           </section>
 
           <section className="proof-section">
-            <h2 className="proof-heading">Recent transactions</h2>
+            <h2 className="proof-heading">
+              Recent transactions
+              {report.recent.length > 0 && <span className="proof-heading-count">{report.recent.length} latest</span>}
+            </h2>
             {report.recent.length === 0 ? (
               <p className="proof-footnote">No transactions indexed yet.</p>
             ) : (
-              <div className="proof-table-wrap">
+              // A fixed-height frame: the page stays the same length however many
+              // transactions there are, and older ones scroll inside it.
+              <div className="proof-table-wrap proof-table-wrap--scroll" tabIndex={0} role="region" aria-label="Recent transactions, scrollable">
                 <table className="proof-table">
                   <thead>
                     <tr>
