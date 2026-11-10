@@ -10,6 +10,7 @@ const {
   isCurrentArtwork,
   renderCertificatePng,
 } = require('../services/certificateArtwork');
+const { buildCertificateSharePage, frontendUrl, publicApiBase } = require('../services/certificateSharePage');
 
 const router = express.Router();
 
@@ -210,6 +211,38 @@ router.get('/token/:tokenId', async (req, res) => {
     console.error('❌ Lỗi truy xuất chứng chỉ:', error.message);
     res.status(500).json({ error: 'Không thể tải chứng chỉ' });
   }
+});
+
+// Trang chia sẻ: thẻ xem trước (tiêu đề, ảnh chứng chỉ) cho LinkedIn/X, rồi chuyển
+// người xem sang trang xác minh công khai của frontend.
+router.get('/token/:tokenId/share', async (req, res) => {
+  const tokenId = Number(req.params.tokenId);
+  if (!Number.isSafeInteger(tokenId) || tokenId <= 0) {
+    return res.status(400).type('text/plain').send('Token ID không hợp lệ');
+  }
+
+  let certificate = null;
+  try {
+    certificate = await Certificate.findOne({
+      chainId: Number(process.env.CHAIN_ID || 43113),
+      certificateContractAddress: process.env.GREEN_CERTIFICATE_SBT_ADDRESS?.toLowerCase(),
+      certificateTokenId: tokenId,
+    }).lean();
+  } catch (error) {
+    // Without the record the page still forwards to verification, just with a plainer preview.
+    console.warn('⚠️ Không đọc được chứng chỉ cho trang chia sẻ:', error.message);
+  }
+
+  const apiBase = publicApiBase(req);
+  const html = buildCertificateSharePage({
+    tokenId,
+    certificate: certificate ? serializeCertificate(certificate) : null,
+    verifyUrl: `${frontendUrl()}/verify/${tokenId}`,
+    shareUrl: `${apiBase}/api/certificates/token/${tokenId}/share`,
+    imageUrl: `${apiBase}/api/certificates/token/${tokenId}/image.png`,
+  });
+  res.set({ 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=300' });
+  return res.status(200).send(html);
 });
 
 // Ảnh chứng chỉ (PNG): mặc định 1000 px; ?size=thumb 168 px; ?download=1 tải về bản 2000 px.
