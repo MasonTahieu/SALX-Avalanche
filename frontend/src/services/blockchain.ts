@@ -1,6 +1,6 @@
 import type { ContractRunner, Eip1193Provider } from 'ethers';
 import { assertPublicContractConfig, env } from '../config/env';
-import type { MintedCertificate } from '../types/domain';
+import type { MintedCertificate, OnChainCertificate } from '../types/domain';
 
 // ethers (~700 KB with its crypto deps) and the contract ABIs are loaded on
 // first use instead of at startup, so pages render before a wallet is needed.
@@ -360,6 +360,35 @@ export async function retirementConfig() {
     maxProjects: Number(maxProjects),
     kgPerSAL: Number(kgPerSAL),
     certificateFeeETH: formatEther(certFeeWei),
+  };
+}
+
+/**
+ * The certificate as the SBT contract stores it, read without a wallet, or
+ * null when no certificate with this ID exists.
+ */
+export async function certificateOnChain(tokenId: number): Promise<OnChainCertificate | null> {
+  const { certificate } = await readContracts();
+  let owner: string;
+  try {
+    owner = await certificate.ownerOf(tokenId);
+  } catch (error: any) {
+    // ownerOf reverts for a token that was never minted.
+    if (error?.code === 'CALL_EXCEPTION') return null;
+    throw error;
+  }
+  const info = await certificate.certificates(tokenId);
+  return {
+    tokenId,
+    owner: String(owner).toLowerCase(),
+    retirer: String(info.retirer).toLowerCase(),
+    projectId: Number(info.projectId),
+    projectCount: Number(info.projectCount),
+    salAmount: Number(info.retiredSALAmount),
+    co2Kg: Number(info.retiredCO2Kg),
+    retiredAt: Number(info.retiredAt),
+    certificateURI: String(info.certificateURI),
+    revoked: Boolean(info.revoked),
   };
 }
 

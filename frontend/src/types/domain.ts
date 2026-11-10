@@ -107,6 +107,22 @@ export interface MintedCertificate {
   txHash: string;
 }
 
+/** A certificate as the SBT contract itself stores it. */
+export interface OnChainCertificate {
+  tokenId: number;
+  owner: string;
+  retirer: string;
+  /** 0 when the certificate covers more than one project. */
+  projectId: number;
+  projectCount: number;
+  salAmount: number;
+  co2Kg: number;
+  /** Unix seconds. */
+  retiredAt: number;
+  certificateURI: string;
+  revoked: boolean;
+}
+
 export interface ProofActivity {
   type: string;
   count: number;

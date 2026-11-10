@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { Certificate, Project } from '../../types/domain';
 import { formatCO2, formatDate, shortAddress } from '../../lib/format';
 import { env } from '../../config/env';
@@ -33,9 +34,11 @@ interface CertificateCardProps {
    * recorded it yet, so there is no artwork or download to show.
    */
   preparing?: boolean;
+  /** Link to the public verification page; off on that page itself. */
+  showVerifyLink?: boolean;
 }
 
-export function CertificateCard({ certificate, project, eager = false, preparing = false }: CertificateCardProps) {
+export function CertificateCard({ certificate, project, eager = false, preparing = false, showVerifyLink = true }: CertificateCardProps) {
   const [imageState, setImageState] = useState<ImageState>('loading');
   const [copied, setCopied] = useState(false);
   const [zoomed, setZoomed] = useState(false);
@@ -119,7 +122,7 @@ export function CertificateCard({ certificate, project, eager = false, preparing
 
       <div style={{ flex: '1 1 260px', minWidth: 0 }}>
         {/* ── Actions: one primary download, secondary links beneath ── */}
-        <div>
+        <div className="cert-card__actions">
           {downloadUrl && (
             <a href={downloadUrl} download style={{ ...button, display: 'block', textAlign: 'center', fontWeight: 600, fontSize: 13, padding: '10px 14px', color: 'var(--bg)', background: 'var(--g)', border: '1px solid var(--g)' }}>
               Download certificate (PNG)
@@ -134,6 +137,11 @@ export function CertificateCard({ certificate, project, eager = false, preparing
             <button type="button" onClick={copyUrl} style={{ ...link, color: 'var(--mut)', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
               {copied ? 'Copied ✓' : 'Copy certificate URL'}
             </button>
+            {showVerifyLink && tokenId > 0 && (
+              <Link to={`/verify/${tokenId}`} style={{ ...link, color: 'var(--g)' }}>
+                Verify &amp; share →
+              </Link>
+            )}
           </div>
         </div>
 
