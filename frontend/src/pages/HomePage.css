@@ -1,0 +1,183 @@
+/* ===================================================================
+   HomePage — Verifiable Climate-Tech (Avalanche Fuji)
+   Responsive across 375px mobile, 1440px desktop, and 1920px projector
+=================================================================== */
+.home-v2 {
+  width: 100%;
+  color: var(--ink);
+  position: relative;
+  z-index: 1;
+}
+
+.home-v2-section {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: clamp(48px, 6vw, 88px) clamp(16px, 3vw, 32px);
+  border-top: 1px solid var(--bd);
+}
+
+.home-v2-hero {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: clamp(24px, 4vw, 56px) clamp(16px, 3vw, 32px) clamp(44px, 5vw, 72px);
+}
+
+.home-v2-avax-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--avax-bg);
+  border: 1px solid var(--avax-bd);
+  color: var(--avax);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.home-v2-tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--g-text);
+  margin-bottom: 12px;
+}
+
+.home-v2-h1 {
+  margin: 18px 0 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(34px, 5.2vw, 68px);
+  line-height: 1.02;
+  letter-spacing: -0.028em;
+  color: var(--ink);
+  max-width: 920px;
+}
+
+.home-v2-h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(26px, 3.4vw, 44px);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.home-v2-lead {
+  margin: 20px 0 0;
+  font-size: clamp(15px, 1.3vw, 18px);
+  line-height: 1.65;
+  color: var(--mut);
+  max-width: 720px;
+}
+
+.home-v2-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.home-v2-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 22px;
+  border-radius: 12px;
+  background: var(--g);
+  color: #04110f;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.home-v2-btn-primary:hover { opacity: 0.92; transform: translateY(-1px); }
+
+.home-v2-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 20px;
+  border-radius: 12px;
+  background: var(--surf);
+  color: var(--ink);
+  border: 1px solid var(--bd2);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.home-v2-btn-secondary:hover { border-color: var(--g); background: var(--surf2); }
+
+.home-v2-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 40px;
+}
+
+.home-v2-card {
+  border-radius: 16px;
+  border: 1px solid var(--bd);
+  background: var(--surf);
+  padding: 22px;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.home-v2-card:hover {
+  border-color: var(--bd2);
+}
+
+.home-v2-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 28px;
+}
+
+.home-v2-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 28px;
+}
+
+.home-v2-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  gap: clamp(28px, 5vw, 64px);
+  align-items: center;
+}
+
+.home-v2-cardswap-wrap {
+  position: relative;
+  min-height: 430px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 0;
+}
+
+@media (max-width: 1024px) {
+  .home-v2-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .home-v2-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .home-v2-split { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 720px) {
+  .home-v2-grid-3 { grid-template-columns: minmax(0, 1fr); }
+  .home-v2-grid-4 { grid-template-columns: minmax(0, 1fr); }
+  .home-v2-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .home-v2-cardswap-wrap { min-height: 360px; overflow: hidden; }
+}
