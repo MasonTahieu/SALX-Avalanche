@@ -17,6 +17,13 @@
 .app-hdr-nav{display:flex;justify-content:center;align-items:center;gap:24px;min-width:0}
 .app-hdr-actions{display:flex;align-items:center;gap:8px;min-width:0}
 .app-hdr-pill{white-space:nowrap}
+.app-hdr-connect{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.app-hdr-faucet{
+  display:inline-flex;align-items:center;justify-content:center;min-height:28px;
+  font:500 9px 'JetBrains Mono',monospace;color:var(--g-text);text-underline-offset:3px;
+}
+.app-hdr-faucet:hover{text-decoration:underline}
+.app-hdr-faucet:focus-visible{outline:2px solid var(--g-text);outline-offset:2px}
 
 /* Menu button — three bars that fold into an × while the panel is open */
 .app-hdr-menu-btn{
@@ -104,6 +111,8 @@
 }
 @media (max-width:639.98px){
   .app-hdr{padding:0 16px}
+  .app-hdr-connect{flex-direction:column;gap:0}
+  .app-hdr-faucet{min-height:24px;font-size:10px}
   .app-hdr-wide-only{display:none}
   .app-hdr-panel-foot{display:flex}
 }

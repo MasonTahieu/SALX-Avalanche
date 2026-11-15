@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { env } from '../config/env';
 import { backend } from '../services/backend';
 import { projectDisplay } from '../lib/projectMeta';
+import { FootprintCalculator } from '../components/home/FootprintCalculator';
 import { certBadge } from '../components/marketplace/certBadge';
 import { ProjectCover } from '../components/project/ProjectCover';
 import type { Listing, Project } from '../types/domain';
@@ -101,6 +102,10 @@ const EDITION_CARD_STYLE = { flex: '0 0 calc((100% - 36px)/3)', minWidth: 250, s
 const MONO = "'JetBrains Mono', monospace";
 const SYNE = "'Syne', sans-serif";
 
+// SBT #2 is a public demo certificate on the deployed Fuji collection.
+const hasSampleCertificate = env.chainId === 43113
+  && env.certificateAddress.toLowerCase() === '0xb6093fbe46ba1c0222f0d24d829eb7f310d314c7';
+
 function MetaItem({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
   return (
     <div>
@@ -154,7 +159,7 @@ export function HomePage() {
     <div className="home-dc" style={{ animation: 'fadeUp .35s ease' }}>
 
       {/* ── HERO ── */}
-      <section className="home-dc-hero home-dc-fit" style={{ maxWidth: 1440, margin: '0 auto', padding: '38px 48px 74px' }}>
+      <section className="home-dc-hero">
 
         {/* eyebrow */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontFamily: MONO, fontSize: 9, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--mut)', marginBottom: 24 }}>
@@ -166,7 +171,7 @@ export function HomePage() {
         <div ref={heroBoxRef} style={{
           position: 'relative', aspectRatio: '2.2/1', overflow: 'hidden',
           background: 'var(--bg)', display: 'grid', placeItems: 'center',
-          marginBottom: 44, transformOrigin: 'top center', willChange: 'transform',
+          marginBottom: 'clamp(20px, 3vw, 36px)', transformOrigin: 'top center', willChange: 'transform',
         }}>
           <img
             src="/assets/mayden-1600.webp"
@@ -184,26 +189,29 @@ export function HomePage() {
         </div>
 
         {/* copy row */}
-        <div className="home-dc-grid-copy" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.08fr) minmax(260px,.72fr)', gap: 70, alignItems: 'end' }}>
-          {/* 12cqi = 12% of the hero's content width, so the widest word ("CULTURE", ~8em)
-              still fits on phones. It only wins below ~470px; wider screens keep the clamp. */}
-          <h1 style={{ fontFamily: SYNE, fontWeight: 800, fontSize: 'min(clamp(52px,7vw,84px),12cqi)', lineHeight: .88, letterSpacing: '-.02em', margin: 0, color: 'var(--g)', textShadow: 'var(--hero-glow)' }}>
-            THE CARBON<br />CULTURE IS<br />ON-CHAIN.
-          </h1>
+        <div className="home-dc-grid-copy">
+          <div className="home-dc-fit">
+            <h1 className="home-dc-headline">
+              THE CARBON<br />CULTURE IS<br />ON-CHAIN.
+            </h1>
+          </div>
           <div>
             <p style={{ fontSize: 12, lineHeight: 1.5, color: 'var(--mut)', margin: '0 0 18px' }}>
               SAL is the native unit for carbon with provenance — a collectible record of real-world restoration, held with complete transparency.
             </p>
-            <button
-              className="home-dc-btn"
-              onClick={() => navigate('/marketplace')}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'var(--org)', color: '#1a0d05', border: 'none', fontFamily: MONO, fontSize: 9, letterSpacing: '.12em', textTransform: 'uppercase', fontWeight: 700, padding: '11px 15px', cursor: 'pointer' }}
-            >
-              EXPLORE SAL ↗
-            </button>
+            <div className="home-dc-hero-actions">
+              <Link className="home-dc-btn home-dc-explore" to="/marketplace">
+                EXPLORE SAL ↗
+              </Link>
+              {hasSampleCertificate && (
+                <Link className="home-dc-sample" to="/verify/2">View sample certificate ↗</Link>
+              )}
+            </div>
           </div>
         </div>
       </section>
+
+      <FootprintCalculator />
 
       {/* ── 01 / THE SAL UNIT ── */}
       <Reveal>

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, act, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
@@ -15,6 +15,7 @@ import { backend } from '../../services/backend';
 import { ApiError } from '../../services/api';
 import { certificateOnChain } from '../../services/blockchain';
 import { env } from '../../config/env';
+import { certificateImageUrl } from '../../lib/certificateImage';
 
 const OWNER = '0x1111111111111111111111111111111111111111';
 
@@ -62,6 +63,12 @@ describe('VerifyCertificatePage', () => {
     vi.mocked(backend.certificateByToken).mockResolvedValue(RECORD as any);
   });
 
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    Reflect.deleteProperty(navigator, 'share');
+    Reflect.deleteProperty(navigator, 'canShare');
+  });
+
   it('confirms a certificate that matches the chain, with QR and share links', async () => {
     await openPage();
 
@@ -74,6 +81,8 @@ describe('VerifyCertificatePage', () => {
 
     const linkedIn = screen.getByRole('link', { name: 'Share on LinkedIn' }).getAttribute('href')!;
     expect(new URL(linkedIn).searchParams.get('url')).toBe(`${env.apiUrl}/api/certificates/token/3/share`);
+    const facebook = screen.getByRole('link', { name: 'Share on Facebook' }).getAttribute('href')!;
+    expect(new URL(facebook).searchParams.get('u')).toBe(`${env.apiUrl}/api/certificates/token/3/share`);
     expect(screen.getByRole('link', { name: 'Download QR' }).getAttribute('download')).toBe('SALX-SBT-3-QR.svg');
     // No link back to this same page from the certificate card.
     expect(screen.queryByRole('link', { name: /Verify & share/ })).toBeNull();
@@ -86,6 +95,43 @@ describe('VerifyCertificatePage', () => {
 
     expect(screen.getByText('This certificate was revoked')).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Share on LinkedIn' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Share on Facebook' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Share on Instagram' })).toBeNull();
+  });
+
+  it('offers a downloadable certificate for Instagram on browsers without file sharing', async () => {
+    const fetchImage = vi.fn();
+    vi.stubGlobal('fetch', fetchImage);
+    await openPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Share on Instagram' }));
+
+    expect(screen.getByRole('link', { name: 'Download image' }).getAttribute('href')).toBe(certificateImageUrl(3, 'download'));
+    expect(screen.getByRole('link', { name: /Open Instagram/ }).getAttribute('href')).toBe('https://www.instagram.com/');
+    expect(screen.queryByRole('button', { name: 'Share image' })).toBeNull();
+    expect(fetchImage).not.toHaveBeenCalled();
+  });
+
+  it('passes the prepared PNG to the system share menu on a separate tap', async () => {
+    const share = vi.fn<(data: ShareData) => Promise<void>>().mockResolvedValue(undefined);
+    Object.defineProperties(navigator, {
+      share: { configurable: true, value: share },
+      canShare: { configurable: true, value: vi.fn().mockReturnValue(true) },
+    });
+    const fetchImage = vi.fn().mockResolvedValue({
+      ok: true,
+      blob: async () => new Blob(['PNG bytes'], { type: 'image/png' }),
+    });
+    vi.stubGlobal('fetch', fetchImage);
+    await openPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Share on Instagram' }));
+    const shareButton = await screen.findByRole('button', { name: 'Share image' });
+    expect(fetchImage).toHaveBeenCalledWith(certificateImageUrl(3), expect.objectContaining({ signal: expect.any(AbortSignal) }));
+    expect(share).not.toHaveBeenCalled();
+
+    await act(async () => { fireEvent.click(shareButton); });
+    expect(share.mock.calls[0][0].files?.[0]).toMatchObject({ name: 'SALX-SBT-3.png', type: 'image/png' });
   });
 
   it('warns when SALX’s copy differs from the chain', async () => {

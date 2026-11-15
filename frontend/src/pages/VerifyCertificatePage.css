@@ -167,6 +167,21 @@
 .verify__panel a.verify__button.is-primary,
 .verify__button.is-primary { grid-column: 1 / -1; border-color: var(--g); background: var(--g); color: #08150e; font-weight: 600; }
 .verify__button:hover { border-color: var(--g); }
+.verify__button:disabled { opacity: .6; cursor: progress; }
+.verify__instagram {
+  grid-column: 1 / -1;
+  padding: 12px;
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--mut);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.verify__instagram p { margin: 0; }
+.verify__instagram-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.verify__instagram-actions .verify__button { flex: 1 1 auto; }
+.verify__instagram-status:not(:empty) { margin-top: 8px; }
 .verify__button:focus-visible,
 .verify__retry:focus-visible,
 .verify__panel a:focus-visible { outline: 2px solid var(--g); outline-offset: 2px; }
@@ -177,7 +192,8 @@
 @media (max-width: 520px) {
   .verify__inner { padding: 24px 16px 48px; }
   .verify__qr { width: 112px; height: 112px; }
-  .verify__actions { grid-template-columns: 1fr; }
+  .verify__actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .verify__actions .verify__button { display: grid; place-items: center; min-height: 42px; padding-inline: 8px; }
 }
 
 /* Printing: a light, one-page record with the QR code; no site chrome or buttons. */

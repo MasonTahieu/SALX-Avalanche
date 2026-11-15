@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { env } from '../../config/env';
 import {
+  facebookShareUrl,
   linkedInShareUrl,
   qrMatrix,
   qrSvgFile,
@@ -19,6 +20,9 @@ describe('certificate sharing', () => {
     expect(linkedInShareUrl(share)).toBe(
       'https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fapi.test%2Fapi%2Fcertificates%2Ftoken%2F3%2Fshare',
     );
+    const facebook = new URL(facebookShareUrl(share));
+    expect(facebook.origin + facebook.pathname).toBe('https://www.facebook.com/sharer/sharer.php');
+    expect(facebook.searchParams.get('u')).toBe(share);
     const x = new URL(xShareUrl(share, shareText(3, 50)));
     expect(x.searchParams.get('url')).toBe(share);
     expect(x.searchParams.get('text')).toBe('Retired 50 kg CO₂e through SALX on Avalanche. Certificate SBT #3, verifiable on-chain:');

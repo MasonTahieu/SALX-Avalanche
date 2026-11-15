@@ -20,12 +20,13 @@ const clampLines = (lines: number): CSSProperties => ({
 export interface MarketDcCardProps {
   listing: Listing;
   project?: Project;
+  initialQuantity?: number;
   /** Opens the checkout for this listing with the chosen quantity. */
   onCheckout: (amount: number) => void;
 }
 
-export function MarketDcCard({ listing, project, onCheckout }: MarketDcCardProps) {
-  const [quantity, setQuantity] = useState(1);
+export function MarketDcCard({ listing, project, initialQuantity = 1, onCheckout }: MarketDcCardProps) {
+  const [quantity, setQuantity] = useState(initialQuantity);
   // A refresh can lower what is left, so the chosen quantity is capped when used.
   const amount = Math.max(1, Math.min(listing.remainingAmount, quantity));
   const setAmount = (value: number) => setQuantity(Math.max(1, Math.min(listing.remainingAmount, value)));

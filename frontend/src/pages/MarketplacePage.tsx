@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { backend } from '../services/backend';
+import { formatNumber } from '../lib/format';
 import type { Listing, Project } from '../types/domain';
 import { MarketDcFilters } from '../components/marketplace/MarketDcFilters';
 import { MarketDcCard } from '../components/marketplace/MarketDcCard';
@@ -8,7 +10,6 @@ import { useMarketFilters, applyDcFilters, deriveFilterOptions } from '../compon
 
 const SKELETON_COUNT = 6;
 const MONO = "'JetBrains Mono', monospace";
-const SYNE = "'Syne', sans-serif";
 
 function DcCardSkeleton() {
   return (
@@ -28,6 +29,9 @@ function DcCardSkeleton() {
 }
 
 export function MarketplacePage() {
+  const [searchParams] = useSearchParams();
+  const salParam = Number(searchParams.get('sal'));
+  const suggestedQuantity = Number.isSafeInteger(salParam) && salParam > 0 ? salParam : null;
   const [listings, setListings] = useState<Listing[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,22 +78,24 @@ export function MarketplacePage() {
     () => applyDcFilters(listings, projectMap, active),
     [listings, projectMap, active],
   );
+  const visibleListings = suggestedQuantity === null ? filtered : filtered.filter(listing => (
+    listing.active && listing.remainingAmount >= suggestedQuantity && !projectMap.get(listing.projectId)?.blacklisted
+  ));
 
   return (
     <div className="home-dc" style={{ animation: 'fadeUp .35s ease' }}>
-      <div className="home-dc-section" style={{ padding: '38px 34px 80px' }}>
+      <div className="home-dc-section market-dc-page">
 
         {/* Page header */}
-        <div style={{ paddingTop: 24, paddingBottom: 34 }}>
-          <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--mut)' }}>
-            MARKET / VERIFIED PROJECTS
-          </span>
-          <h1 style={{ fontFamily: SYNE, fontWeight: 800, fontSize: 'clamp(40px,5vw,60px)', lineHeight: 1.03, letterSpacing: '-.02em', margin: '12px 0 0', color: 'var(--ink)' }}>
-            Active Carbon Projects
-          </h1>
-          <p style={{ fontSize: 11, color: 'var(--mut)', margin: '12px 0 0' }}>
-            Verified VCS and Gold Standard certified projects
-          </p>
+        <div className="market-dc-header">
+          <h1>Active Carbon Projects</h1>
+          <p>Verified VCS and Gold Standard certified projects</p>
+          {suggestedQuantity !== null && (
+            <div className="market-dc-quantity">
+              <span>Suggested quantity <strong>{formatNumber(suggestedQuantity, 0, 'en-US')} SAL</strong></span>
+              <Link to="/marketplace" aria-label="Clear suggested quantity">Clear</Link>
+            </div>
+          )}
         </div>
 
         {/* Sidebar + grid layout */}
@@ -121,17 +127,18 @@ export function MarketplacePage() {
                   TRY AGAIN
                 </button>
               </div>
-            ) : filtered.length === 0 ? (
+            ) : visibleListings.length === 0 ? (
               <div style={{ padding: '60px 0', textAlign: 'center', fontFamily: MONO, fontSize: 10, color: 'var(--mut)', letterSpacing: '.08em' }}>
-                NO PROJECTS MATCH YOUR FILTERS
+                {suggestedQuantity === null ? 'NO PROJECTS MATCH YOUR FILTERS' : 'NO LISTINGS MATCH THIS QUANTITY AND YOUR FILTERS'}
               </div>
             ) : (
               <div className="market-dc-grid">
-                {filtered.map((listing) => (
+                {visibleListings.map((listing) => (
                   <MarketDcCard
-                    key={listing.listingId}
+                    key={`${listing.listingId}:${suggestedQuantity ?? 1}`}
                     listing={listing}
                     project={projectMap.get(listing.projectId)}
+                    initialQuantity={suggestedQuantity ?? 1}
                     onCheckout={(amount) => setCheckout({ listing, amount })}
                   />
                 ))}

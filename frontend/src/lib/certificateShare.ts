@@ -20,6 +20,9 @@ export const shareText = (tokenId: number, co2Kg: number) =>
 export const linkedInShareUrl = (url: string) =>
   `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
 
+export const facebookShareUrl = (url: string) =>
+  `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+
 export const xShareUrl = (url: string, text: string) =>
   `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
 

@@ -7,6 +7,7 @@ import { certificateOnChain } from '../services/blockchain';
 import { env } from '../config/env';
 import { formatCO2, formatDate, shortAddress } from '../lib/format';
 import {
+  facebookShareUrl,
   linkedInShareUrl,
   qrMatrix,
   qrSvgFile,
@@ -16,6 +17,7 @@ import {
   xShareUrl,
 } from '../lib/certificateShare';
 import { CertificateCard } from '../components/certificate/CertificateCard';
+import { InstagramShare } from '../components/certificate/InstagramShare';
 import './VerifyCertificatePage.css';
 
 type Load<T> = { state: 'loading' } | { state: 'ready'; value: T } | { state: 'missing' } | { state: 'error' };
@@ -225,6 +227,10 @@ export function VerifyCertificatePage() {
                   <a className="verify__button is-primary" href={linkedInShareUrl(shareLinkUrl(tokenId))} target="_blank" rel="noreferrer">
                     Share on LinkedIn
                   </a>
+                  <a className="verify__button" href={facebookShareUrl(shareLinkUrl(tokenId))} target="_blank" rel="noreferrer">
+                    Share on Facebook
+                  </a>
+                  {matches && <InstagramShare key={tokenId} tokenId={tokenId} />}
                   <a className="verify__button" href={xShareUrl(shareLinkUrl(tokenId), shareText(tokenId, onChain!.co2Kg))} target="_blank" rel="noreferrer">
                     Share on X
                   </a>

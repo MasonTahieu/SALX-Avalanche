@@ -1,11 +1,12 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate, useNavigationType } from 'react-router-dom';
 import { useWallet } from '../../contexts/WalletContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { env } from '../../config/env';
 import { NETWORKS, networkById } from '../../config/networks';
 import type { WalletKind } from '../../services/blockchain';
 import { useServerWaking } from '../../services/serverStatus';
+import { TEST_AVAX_FAUCET_URL } from '../../lib/walletFunding';
 import { FundingNotice } from '../wallet/FundingNotice';
 import './AppShell.css';
 
@@ -48,6 +49,7 @@ export function AppShell() {
   const serverWaking = useServerWaking();
   const navigate = useNavigate();
   const location = useLocation();
+  const navigationType = useNavigationType();
   const { theme, toggleTheme } = useTheme();
 
   const [modalStep, setModalStep] = useState<ModalStep>('role');
@@ -57,6 +59,15 @@ export function AppShell() {
   const menuBtnRef = useRef<HTMLButtonElement>(null);
   const pendingRoleRef = useRef<Role>('user');
   const connectingFromModalRef = useRef(false);
+  const previousPathRef = useRef(location.pathname);
+
+  useEffect(() => {
+    const pathChanged = previousPathRef.current !== location.pathname;
+    previousPathRef.current = location.pathname;
+    if (pathChanged && navigationType !== 'POP' && !location.hash) {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }, [location.pathname, location.hash, navigationType]);
 
   // Close the mobile menu whenever the route changes (link tap, back button…)
   useEffect(() => {
@@ -280,17 +291,25 @@ export function AppShell() {
               </button>
             </div>
           ) : (
-            <button
-              onClick={openModal}
-              style={{
-                fontFamily: MONO, fontSize: 10, fontWeight: 600, letterSpacing: '.06em',
-                background: 'transparent', color: 'var(--ink)',
-                border: '1px solid var(--bd2)', padding: '7px 14px',
-                borderRadius: 999, cursor: 'pointer',
-              }}
-            >
-              Connect Wallet
-            </button>
+            <div className="app-hdr-connect">
+              <button
+                type="button"
+                onClick={openModal}
+                style={{
+                  fontFamily: MONO, fontSize: 10, fontWeight: 600, letterSpacing: '.06em',
+                  background: 'transparent', color: 'var(--ink)',
+                  border: '1px solid var(--bd2)', padding: '7px 14px',
+                  borderRadius: 999, cursor: 'pointer',
+                }}
+              >
+                Connect Wallet
+              </button>
+              {env.chainId === 43113 && (
+                <a className="app-hdr-faucet" href={TEST_AVAX_FAUCET_URL} target="_blank" rel="noreferrer">
+                  Get Fuji AVAX ↗
+                </a>
+              )}
+            </div>
           )}
 
           {/* Menu button — only displayed below 1024px */}
