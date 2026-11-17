@@ -104,6 +104,8 @@ export const CardSwap = forwardRef<CardSwapHandle, CardSwapProps>(({
   const intervalRef = useRef<number>(0);
   const container = useRef<HTMLDivElement>(null);
   const hoveredRef = useRef(false);
+  const onActiveChangeRef = useRef(onActiveChange);
+  onActiveChangeRef.current = onActiveChange;
 
   const layoutInstant = useCallback((nextOrder: number[]) => {
     order.current = nextOrder;
@@ -115,8 +117,8 @@ export const CardSwap = forwardRef<CardSwapHandle, CardSwapProps>(({
         placeNow(el, makeSlot(slotIdx, cardDistance, verticalDistance, total), skewAmount);
       }
     });
-    if (nextOrder.length > 0) onActiveChange?.(nextOrder[0]);
-  }, [refs, cardDistance, verticalDistance, skewAmount, onActiveChange]);
+    if (nextOrder.length > 0) onActiveChangeRef.current?.(nextOrder[0]);
+  }, [refs, cardDistance, verticalDistance, skewAmount]);
 
   const animateOrder = useCallback((nextOrder: number[], droppedIdx?: number) => {
     const total = refs.length;
@@ -129,7 +131,7 @@ export const CardSwap = forwardRef<CardSwapHandle, CardSwapProps>(({
     });
 
     order.current = nextOrder;
-    onActiveChange?.(nextOrder[0]);
+    onActiveChangeRef.current?.(nextOrder[0]);
 
     const tl = gsap.timeline();
     tlRef.current = tl;
@@ -149,7 +151,7 @@ export const CardSwap = forwardRef<CardSwapHandle, CardSwapProps>(({
         tl.to(el, { x: slot.x, y: slot.y, z: slot.z, duration: 0.45, ease }, 0.04 * slotIdx);
       }
     });
-  }, [refs, cardDistance, verticalDistance, easing, onActiveChange]);
+  }, [refs, cardDistance, verticalDistance, easing]);
 
   const swapNext = useCallback(() => {
     if (order.current.length < 2) return;
