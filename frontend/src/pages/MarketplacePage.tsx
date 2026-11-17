@@ -32,6 +32,8 @@ export function MarketplacePage() {
   const [searchParams] = useSearchParams();
   const salParam = Number(searchParams.get('sal'));
   const suggestedQuantity = Number.isSafeInteger(salParam) && salParam > 0 ? salParam : null;
+  const projectIdParam = Number(searchParams.get('projectId'));
+  const selectedProjectId = Number.isSafeInteger(projectIdParam) && projectIdParam > 0 ? projectIdParam : null;
   const [listings, setListings] = useState<Listing[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,9 +80,15 @@ export function MarketplacePage() {
     () => applyDcFilters(listings, projectMap, active),
     [listings, projectMap, active],
   );
-  const visibleListings = suggestedQuantity === null ? filtered : filtered.filter(listing => (
-    listing.active && listing.remainingAmount >= suggestedQuantity && !projectMap.get(listing.projectId)?.blacklisted
-  ));
+  const visibleListings = useMemo(() => {
+    let rows = suggestedQuantity === null ? filtered : filtered.filter(listing => (
+      listing.active && listing.remainingAmount >= suggestedQuantity && !projectMap.get(listing.projectId)?.blacklisted
+    ));
+    if (selectedProjectId !== null) {
+      rows = rows.filter(listing => listing.projectId === selectedProjectId);
+    }
+    return rows;
+  }, [filtered, suggestedQuantity, selectedProjectId, projectMap]);
 
   return (
     <div className="home-dc" style={{ animation: 'fadeUp .35s ease' }}>
@@ -90,6 +98,15 @@ export function MarketplacePage() {
         <div className="market-dc-header">
           <h1>Active Carbon Projects</h1>
           <p>Verified VCS and Gold Standard certified projects</p>
+          {selectedProjectId !== null && (
+            <div className="market-dc-quantity">
+              <span>
+                Project <strong>#{selectedProjectId}</strong>
+                {projectMap.get(selectedProjectId)?.projectName ? ` · ${projectMap.get(selectedProjectId)!.projectName}` : ''}
+              </span>
+              <Link to="/marketplace" aria-label="Show all projects">Show all</Link>
+            </div>
+          )}
           {suggestedQuantity !== null && (
             <div className="market-dc-quantity">
               <span>Suggested quantity <strong>{formatNumber(suggestedQuantity, 0, 'en-US')} SAL</strong></span>

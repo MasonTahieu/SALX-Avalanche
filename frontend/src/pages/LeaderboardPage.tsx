@@ -6,7 +6,7 @@ import { RankHighlightCards } from '../components/leaderboard/RankHighlightCards
 import type { LeaderRow } from '../components/leaderboard/RankHighlightCards';
 
 const MONO = "'JetBrains Mono', monospace";
-const SYNE = "'Syne', sans-serif";
+const SYNE = "'Be Vietnam Pro', sans-serif";
 
 export function LeaderboardPage() {
   const [rows, setRows] = useState<LeaderRow[]>([]);

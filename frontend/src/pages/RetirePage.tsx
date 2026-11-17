@@ -5,10 +5,12 @@ import { useWallet } from '../contexts/WalletContext';
 import type { Project } from '../types/domain';
 import { useRetireFlow } from '../components/retire/useRetireFlow';
 import { CertificateCard } from '../components/certificate/CertificateCard';
+import { TxStepper } from '../components/ui/TxStepper';
+import { useLanguage } from '../contexts/LanguageContext';
 import { env } from '../config/env';
 
 const MONO = "'JetBrains Mono', monospace";
-const SYNE = "'Syne', sans-serif";
+const SYNE = "'Be Vietnam Pro', sans-serif";
 
 /* ── Certificate preview card (right panel, idle state) ── */
 function CertPreview({
@@ -57,12 +59,28 @@ function CertPreview({
 
 /* ── Pending cert card (tx submitted) ── */
 function CertPending({ txHash, onReload }: { txHash: string; onReload: () => Promise<void> }) {
+  const { t } = useLanguage();
   return (
-    <section style={{ minHeight: 420, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(150deg,var(--surf2),var(--surf))', border: '1px solid rgba(45,201,34,.20)', borderRadius: 12, padding: 18 }}>
-      <div style={{ fontFamily: MONO, fontSize: 9, letterSpacing: '.12em', color: 'var(--g)', marginBottom: 14 }}>TX SUBMITTED</div>
-      <div style={{ fontFamily: MONO, fontSize: 10, color: 'var(--ink)', wordBreak: 'break-all', textAlign: 'center', padding: '0 12px', marginBottom: 18 }}>{txHash}</div>
-      <div style={{ fontFamily: MONO, fontSize: 9, color: 'var(--mut)', marginBottom: 20, letterSpacing: '.06em' }}>Indexing certificate… this may take a few seconds.</div>
-      <button onClick={onReload} style={{ fontFamily: MONO, fontSize: 9, letterSpacing: '.1em', padding: '9px 20px', borderRadius: 8, background: 'rgba(45,201,34,.13)', border: '1px solid rgba(45,201,34,.4)', color: 'var(--g)', cursor: 'pointer' }}>CHECK CERTIFICATE</button>
+    <section style={{ minHeight: 420, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, background: 'linear-gradient(150deg,var(--surf2),var(--surf))', border: '1px solid rgba(45,201,34,.24)', borderRadius: 16, padding: 24 }}>
+      <div style={{ fontFamily: MONO, fontSize: 12, letterSpacing: '.1em', color: 'var(--g)', fontWeight: 700 }}>TX SUBMITTED</div>
+      <div style={{ width: '100%', maxWidth: 460 }}>
+        <TxStepper
+          currentStep="confirming"
+          txHash={txHash}
+          labels={{
+            approve: t('tx.approve'),
+            sign: t('tx.sign'),
+            confirming: t('tx.confirming'),
+            success: t('tx.success'),
+          }}
+        />
+      </div>
+      <div style={{ fontFamily: MONO, fontSize: 12, color: 'var(--mut)', letterSpacing: '.04em', textAlign: 'center' }}>
+        Indexing certificate… this may take a few seconds.
+      </div>
+      <button onClick={onReload} style={{ fontFamily: MONO, fontSize: 12, fontWeight: 600, letterSpacing: '.06em', padding: '10px 20px', borderRadius: 10, background: 'rgba(45,201,34,.13)', border: '1px solid rgba(45,201,34,.4)', color: 'var(--g)', cursor: 'pointer' }}>
+        CHECK CERTIFICATE
+      </button>
     </section>
   );
 }

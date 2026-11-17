@@ -6,7 +6,7 @@ import { networkById } from '../config/networks';
 import { env } from '../config/env';
 
 const MONO = "'JetBrains Mono', monospace";
-const SYNE = "'Syne', sans-serif";
+const SYNE = "'Be Vietnam Pro', sans-serif";
 
 const STEPS = [
   { n: 1, label: 'DOCUMENTS' },

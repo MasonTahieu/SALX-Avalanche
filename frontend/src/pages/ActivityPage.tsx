@@ -5,7 +5,7 @@ import { formatDate } from '../lib/format';
 import type { TransactionEvent } from '../types/domain';
 
 const MONO = "'JetBrains Mono', monospace";
-const SYNE = "'Syne', sans-serif";
+const SYNE = "'Be Vietnam Pro', sans-serif";
 
 const TX_STYLES: Record<string, { bg: string; color: string }> = {
   PURCHASE:  { bg: 'rgba(45,201,34,.12)',   color: 'var(--g)' },

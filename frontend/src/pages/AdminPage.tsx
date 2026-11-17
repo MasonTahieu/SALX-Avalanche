@@ -9,7 +9,7 @@ import { errorMessage } from '../lib/errors';
 import { useWallet } from '../contexts/WalletContext';
 
 const MONO = "'JetBrains Mono', monospace";
-const SYNE = "'Syne', sans-serif";
+const SYNE = "'Be Vietnam Pro', sans-serif";
 const SURF = '#101c18';
 const SURF2 = '#162119';
 const BD = 'var(--bd-mid)';

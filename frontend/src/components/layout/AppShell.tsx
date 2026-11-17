@@ -2,35 +2,36 @@ import { Suspense, useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate, useNavigationType } from 'react-router-dom';
 import { useWallet } from '../../contexts/WalletContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { env } from '../../config/env';
 import { NETWORKS, networkById } from '../../config/networks';
 import type { WalletKind } from '../../services/blockchain';
 import { useServerWaking } from '../../services/serverStatus';
 import { TEST_AVAX_FAUCET_URL } from '../../lib/walletFunding';
 import { FundingNotice } from '../wallet/FundingNotice';
+import { CursorAmbientGlow } from '../ui/CursorAmbientGlow';
 import './AppShell.css';
 
 const MONO = "'JetBrains Mono', monospace";
-const SYNE = "'Syne', sans-serif";
+const SYNE = "'Be Vietnam Pro', sans-serif";
 const INTER = "'Inter', sans-serif";
 
-type ModalStep = 'role' | 'wallet';
 type Role = 'user' | 'validator';
 
-type NavItem = { to: string; label: string };
+type NavItem = { to: string; key: string };
 
 const USER_NAV: NavItem[] = [
-  { to: '/marketplace', label: 'Marketplace' },
-  { to: '/retire',      label: 'Retire' },
-  { to: '/submit',      label: 'Submit' },
-  { to: '/dashboard',   label: 'Dashboard' },
-  { to: '/leaderboard', label: 'Leaderboard' },
-  { to: '/proof',       label: 'Proof' },
+  { to: '/marketplace', key: 'nav.marketplace' },
+  { to: '/retire',      key: 'nav.retire' },
+  { to: '/submit',      key: 'nav.submit' },
+  { to: '/dashboard',   key: 'nav.dashboard' },
+  { to: '/leaderboard', key: 'nav.leaderboard' },
+  { to: '/proof',       key: 'nav.proof' },
 ];
 
 const VALIDATOR_NAV: NavItem[] = [
-  { to: '/validator', label: 'Pending Projects' },
-  { to: '/admin',     label: 'Admin' },
+  { to: '/validator', key: 'nav.pendingProjects' },
+  { to: '/admin',     key: 'nav.admin' },
 ];
 
 // Must match the breakpoint in AppShell.css where the inline nav comes back.
@@ -51,8 +52,9 @@ export function AppShell() {
   const location = useLocation();
   const navigationType = useNavigationType();
   const { theme, toggleTheme } = useTheme();
+  const { language, toggleLanguage, t } = useLanguage();
 
-  const [modalStep, setModalStep] = useState<ModalStep>('role');
+  const [selectedRole, setSelectedRole] = useState<Role>('user');
   const [netOpen, setNetOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const netRef = useRef<HTMLDivElement>(null);
@@ -110,30 +112,21 @@ export function AppShell() {
   useEffect(() => {
     if (connectingFromModalRef.current && wallet.address && !wallet.connecting) {
       connectingFromModalRef.current = false;
-      setModalStep('role');
       wallet.setRole(pendingRoleRef.current);
       if (pendingRoleRef.current === 'validator') navigate('/validator');
     }
   }, [wallet.address, wallet.connecting, navigate, wallet.setRole]);
 
   const openModal = () => {
-    setModalStep('role');
+    setSelectedRole('user');
     wallet.openRoleModal();
   };
 
   const closeModal = () => {
     wallet.closeWalletModal();
-    setModalStep('role');
   };
 
-  const selectRole = (r: Role) => {
-    pendingRoleRef.current = r;
-    setModalStep('wallet');
-  };
-
-  // Opened from an action on a page: the visitor is a user, so skip the role step.
-  const currentStep: ModalStep = wallet.modalAsksRole ? modalStep : 'wallet';
-  const modalRole: Role = wallet.modalAsksRole ? pendingRoleRef.current : 'user';
+  const modalRole: Role = wallet.modalAsksRole ? selectedRole : 'user';
 
   const connectWith = async (kind: WalletKind) => {
     pendingRoleRef.current = modalRole;
@@ -143,18 +136,18 @@ export function AppShell() {
 
   const isValidator = wallet.role === 'validator';
   const navItems = isValidator ? VALIDATOR_NAV : USER_NAV;
-  const themeLabel = theme === 'dark' ? 'LIGHT' : 'DARK';
+  const themeLabel = theme === 'dark' ? t('common.light') : t('common.dark');
 
   const navLinkStyle = (isActive: boolean): React.CSSProperties => ({
     background: 'none',
     border: 'none',
-    borderBottom: `1px solid ${isActive ? 'var(--ink)' : 'transparent'}`,
+    borderBottom: `2px solid ${isActive ? 'var(--g)' : 'transparent'}`,
     cursor: 'pointer',
     padding: '8px 0',
     color: isActive ? 'var(--ink)' : 'var(--mut)',
     fontFamily: MONO,
     fontSize: 12,
-    letterSpacing: '.07em',
+    letterSpacing: '.06em',
     textTransform: 'uppercase',
     textDecoration: 'none',
     transition: 'color .2s, border-color .2s',
@@ -162,7 +155,8 @@ export function AppShell() {
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh', background: 'var(--bg)', color: 'var(--ink)' }}>
+    <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', minHeight: '100dvh', background: 'var(--bg)', color: 'var(--ink)' }}>
+      <CursorAmbientGlow />
 
       {/* ── Header ── (layout + breakpoints in AppShell.css) */}
       <header className="app-hdr">
@@ -182,29 +176,42 @@ export function AppShell() {
         <nav className="app-hdr-nav" aria-label="Main">
           {navItems.map(item => (
             <NavLink key={item.to} to={item.to} style={({ isActive }) => navLinkStyle(isActive)}>
-              {item.label}
+              {t(item.key)}
             </NavLink>
           ))}
           {isValidator && (
             <span style={{
-              fontFamily: MONO, fontSize: 7, letterSpacing: '.1em', textTransform: 'uppercase',
+              fontFamily: MONO, fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase',
               background: 'rgba(231,199,101,.1)', color: '#e7c765',
-              border: '1px solid rgba(231,199,101,.3)', borderRadius: 4, padding: '3px 8px',
+              border: '1px solid rgba(231,199,101,.3)', borderRadius: 6, padding: '3px 8px',
             }}>
               VALIDATOR
             </span>
           )}
         </nav>
 
-        {/* Col 3 — Theme toggle + Network + Wallet (+ menu button below 1024px) */}
+        {/* Col 3 — Language + Theme toggle + Network + Wallet (+ menu button below 1024px) */}
         <div className="app-hdr-actions">
+          <button
+            className="app-hdr-wide-only"
+            onClick={toggleLanguage}
+            title="Switch language VI / EN"
+            style={{
+              background: 'none', border: '1px solid var(--bd)',
+              color: 'var(--ink)', fontFamily: MONO, fontSize: 11, fontWeight: 600,
+              letterSpacing: '.06em', padding: '6px 10px', borderRadius: 8, cursor: 'pointer',
+            }}
+          >
+            {language === 'vi' ? 'VI' : 'EN'}
+          </button>
+
           <button
             className="app-hdr-wide-only"
             onClick={toggleTheme}
             style={{
               background: 'none', border: '1px solid var(--bd)',
-              color: 'var(--mut)', fontFamily: MONO, fontSize: 9,
-              letterSpacing: '.06em', padding: '6px 10px', borderRadius: 6, cursor: 'pointer',
+              color: 'var(--mut)', fontFamily: MONO, fontSize: 11,
+              letterSpacing: '.06em', padding: '6px 10px', borderRadius: 8, cursor: 'pointer',
             }}
           >
             {themeLabel}
@@ -218,21 +225,22 @@ export function AppShell() {
               aria-expanded={netOpen}
               style={{
                 display: 'flex', alignItems: 'center', gap: 6,
-                fontFamily: MONO, fontSize: 9, letterSpacing: '.1em', fontWeight: 700,
-                color: 'var(--g)', background: 'rgba(45,201,34,.08)',
-                border: '1px solid rgba(45,201,34,.25)', borderRadius: 6,
+                fontFamily: MONO, fontSize: 11, letterSpacing: '.06em', fontWeight: 700,
+                color: 'var(--avax)', background: 'var(--avax-bg)',
+                border: '1px solid var(--avax-bd)', borderRadius: 8,
                 padding: '6px 10px', cursor: 'pointer',
               }}
             >
+              <span aria-hidden="true">▲</span>
               {networkLabel(wallet.chainId ?? env.chainId)}
-              <span style={{ fontSize: 8, opacity: .7 }}>▾</span>
+              <span style={{ fontSize: 10, opacity: .75 }}>▾</span>
             </button>
             {netOpen && (
               <div
                 style={{
                   position: 'absolute', top: 'calc(100% + 6px)', right: 0,
-                  background: 'var(--surf)', border: '1px solid rgba(45,201,34,.25)',
-                  borderRadius: 8, overflow: 'hidden', zIndex: 50, minWidth: 130,
+                  background: 'var(--surf)', border: '1px solid var(--avax-bd)',
+                  borderRadius: 10, overflow: 'hidden', zIndex: 50, minWidth: 165,
                   boxShadow: '0 8px 24px rgba(0,0,0,.4)',
                 }}
               >
@@ -244,14 +252,14 @@ export function AppShell() {
                       onClick={() => { wallet.switchNetwork(n.id); setNetOpen(false); }}
                       style={{
                         display: 'block', width: '100%', textAlign: 'left',
-                        fontFamily: MONO, fontSize: 9, letterSpacing: '.08em',
+                        fontFamily: MONO, fontSize: 11, letterSpacing: '.06em',
                         padding: '10px 14px', cursor: 'pointer',
-                        background: active ? 'rgba(45,201,34,.1)' : 'transparent',
-                        color: active ? 'var(--g)' : 'var(--ink)',
+                        background: active ? 'var(--avax-bg)' : 'transparent',
+                        color: active ? 'var(--avax)' : 'var(--ink)',
                         border: 'none', borderBottom: '1px solid var(--bd)',
                       }}
                     >
-                      {active && '✓ '}{n.shortName}
+                      {active ? '✓ ' : ''}{n.name}
                     </button>
                   );
                 })}
@@ -281,13 +289,13 @@ export function AppShell() {
                 onClick={() => wallet.disconnect()}
                 title="Disconnect wallet"
                 style={{
-                  fontFamily: MONO, fontSize: 8, letterSpacing: '.06em',
+                  fontFamily: MONO, fontSize: 11, letterSpacing: '.06em',
                   background: 'none', color: '#e05252',
                   border: '1px solid rgba(224,82,82,.3)', padding: '6px 10px',
-                  borderRadius: 6, cursor: 'pointer',
+                  borderRadius: 8, cursor: 'pointer',
                 }}
               >
-                DISCONNECT
+                {t('common.disconnect')}
               </button>
             </div>
           ) : (
@@ -296,17 +304,17 @@ export function AppShell() {
                 type="button"
                 onClick={openModal}
                 style={{
-                  fontFamily: MONO, fontSize: 10, fontWeight: 600, letterSpacing: '.06em',
+                  fontFamily: MONO, fontSize: 11, fontWeight: 600, letterSpacing: '.05em',
                   background: 'transparent', color: 'var(--ink)',
                   border: '1px solid var(--bd2)', padding: '7px 14px',
                   borderRadius: 999, cursor: 'pointer',
                 }}
               >
-                Connect Wallet
+                {t('common.connectWallet')}
               </button>
               {env.chainId === 43113 && (
                 <a className="app-hdr-faucet" href={TEST_AVAX_FAUCET_URL} target="_blank" rel="noreferrer">
-                  Get Fuji AVAX ↗
+                  {t('common.getFaucet')}
                 </a>
               )}
             </div>
@@ -338,14 +346,17 @@ export function AppShell() {
                   className="app-hdr-panel-link"
                   onClick={() => setMenuOpen(false)}
                 >
-                  {item.label}
+                  {t(item.key)}
                 </NavLink>
               ))}
             </nav>
             {/* Controls that leave the header row below 640px */}
             <div className="app-hdr-panel-foot">
+              <button type="button" className="app-hdr-chip" onClick={toggleLanguage}>
+                {language === 'vi' ? 'VI / EN' : 'EN / VI'}
+              </button>
               <button type="button" className="app-hdr-chip" onClick={toggleTheme}>
-                {themeLabel} mode
+                {themeLabel}
               </button>
               {wallet.address && (
                 <button
@@ -353,7 +364,7 @@ export function AppShell() {
                   className="app-hdr-chip app-hdr-chip--danger"
                   onClick={() => { wallet.disconnect(); setMenuOpen(false); }}
                 >
-                  Disconnect
+                  {t('common.disconnect')}
                 </button>
               )}
             </div>
@@ -381,8 +392,8 @@ export function AppShell() {
           <div className="server-waking__toast">
             <span className="server-waking__dot" aria-hidden="true" />
             <span>
-              <strong>Starting the SALX server…</strong>
-              <span className="server-waking__sub">It sleeps when idle on free hosting. The first load can take up to a minute.</span>
+              <strong>{t('common.serverWakingTitle')}</strong>
+              <span className="server-waking__sub">{t('common.serverWakingSub')}</span>
             </span>
           </div>
         )}
@@ -444,102 +455,62 @@ export function AppShell() {
                   borderRadius: '50%',
                   animation: 'spin .8s linear infinite',
                 }} />
-                <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: '.12em', color: 'var(--mut)' }}>
-                  CONNECTING AS {modalRole.toUpperCase()}…
+                <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: '.08em', color: 'var(--mut)' }}>
+                  {t('wallet.connectingAs')} {modalRole.toUpperCase()}…
                 </span>
               </div>
             )}
 
-            {/* Step 1 — Role */}
-            {!wallet.connecting && currentStep === 'role' && (
-              <>
-                <p style={{
-                  fontFamily: INTER, fontWeight: 500, fontSize: 10, letterSpacing: '.08em',
-                  textTransform: 'uppercase', color: 'var(--mut)',
-                  textAlign: 'center', margin: '0 0 16px',
-                }}>
-                  I AM A…
-                </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {/* USER */}
-                  <button
-                    onClick={() => selectRole('user')}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 14,
-                      background: 'var(--surf2)', border: '1px solid rgba(45,201,34,.25)',
-                      borderRadius: 10, padding: 16, cursor: 'pointer', width: '100%', textAlign: 'left',
-                    }}
-                  >
-                    <span style={{
-                      width: 36, height: 36,
-                      background: 'rgba(45,201,34,.14)', border: '1px solid rgba(45,201,34,.3)',
-                      borderRadius: 8, display: 'grid', placeItems: 'center',
-                      fontFamily: INTER, fontWeight: 700, fontSize: 13, color: 'var(--g)', flexShrink: 0,
-                    }}>U</span>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontFamily: INTER, fontWeight: 650, fontSize: 13, letterSpacing: '.03em', textTransform: 'uppercase', color: 'var(--ink)' }}>USER</div>
-                      <div style={{ fontFamily: INTER, fontWeight: 400, fontSize: 11, color: 'var(--mut)', marginTop: 3 }}>
-                        Buy, sell &amp; retire carbon credits
-                      </div>
-                    </div>
-                    <span style={{ color: 'var(--g)', fontSize: 14, lineHeight: 1, alignSelf: 'center' }}>→</span>
-                  </button>
-
-                  {/* VALIDATOR */}
-                  <button
-                    onClick={() => selectRole('validator')}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 14,
-                      background: 'var(--surf2)', border: '1px solid rgba(231,199,101,.22)',
-                      borderRadius: 10, padding: 16, cursor: 'pointer', width: '100%', textAlign: 'left',
-                    }}
-                  >
-                    <span style={{
-                      width: 36, height: 36,
-                      background: 'rgba(231,199,101,.12)', border: '1px solid rgba(231,199,101,.3)',
-                      borderRadius: 8, display: 'grid', placeItems: 'center',
-                      fontFamily: INTER, fontWeight: 700, fontSize: 13, color: '#e7c765', flexShrink: 0,
-                    }}>V</span>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontFamily: INTER, fontWeight: 650, fontSize: 13, letterSpacing: '.03em', textTransform: 'uppercase', color: 'var(--ink)' }}>VALIDATOR</div>
-                      <div style={{ fontFamily: INTER, fontWeight: 400, fontSize: 11, color: 'var(--mut)', marginTop: 3 }}>
-                        Review &amp; vote on project submissions
-                      </div>
-                    </div>
-                    <span style={{ color: '#e7c765', fontSize: 14, lineHeight: 1, alignSelf: 'center' }}>→</span>
-                  </button>
-                </div>
-              </>
-            )}
-
-            {/* Step 2 — Wallet */}
-            {!wallet.connecting && currentStep === 'wallet' && (
+            {/* Unified Wallet Step with inline Role selector (defaults to User) */}
+            {!wallet.connecting && (
               <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {wallet.modalAsksRole && (
+                  <div style={{ marginBottom: 16 }}>
+                    <span style={{ display: 'block', fontFamily: MONO, fontSize: 11, letterSpacing: '.06em', color: 'var(--mut)', marginBottom: 8 }}>
+                      {t('wallet.roleLabel')}
+                    </span>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, padding: 4, borderRadius: 12, background: 'var(--surf2)', border: '1px solid var(--bd)' }}>
+                      {(['user', 'validator'] as const).map((r) => {
+                        const active = selectedRole === r;
+                        return (
+                          <button
+                            key={r}
+                            type="button"
+                            onClick={() => setSelectedRole(r)}
+                            style={{
+                              padding: '8px 10px',
+                              borderRadius: 8,
+                              border: 'none',
+                              cursor: 'pointer',
+                              fontFamily: INTER,
+                              fontSize: 12,
+                              fontWeight: 600,
+                              background: active ? (r === 'validator' ? 'rgba(231,199,101,.18)' : 'var(--gd)') : 'transparent',
+                              color: active ? (r === 'validator' ? 'var(--gold)' : 'var(--g-text)') : 'var(--mut)',
+                              transition: 'background .15s, color .15s',
+                            }}
+                          >
+                            {r === 'user' ? t('wallet.roleUser') : t('wallet.roleValidator')}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 <div style={{
                   display: 'flex', alignItems: 'center',
-                  justifyContent: 'space-between', marginBottom: 16,
+                  justifyContent: 'space-between', marginBottom: 12,
                 }}>
-                  {wallet.modalAsksRole ? (
-                    <button
-                      onClick={() => setModalStep('role')}
-                      style={{
-                        fontFamily: MONO, fontSize: 8, letterSpacing: '.08em',
-                        color: 'var(--mut)', background: 'none', border: 'none',
-                        cursor: 'pointer', padding: 0,
-                      }}
-                    >
-                      ← BACK
-                    </button>
-                  ) : <span aria-hidden="true" />}
-                  <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: '.12em', color: 'var(--mut)' }}>
-                    SELECT WALLET
+                  <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: '.06em', color: 'var(--mut)' }}>
+                    {t('wallet.selectWallet')}
                   </span>
                   <span style={{
-                    fontFamily: MONO, fontSize: 8,
-                    color: modalRole === 'validator' ? '#e7c765' : 'var(--g)',
+                    fontFamily: MONO, fontSize: 10, fontWeight: 600,
+                    color: modalRole === 'validator' ? 'var(--gold)' : 'var(--g-text)',
                     background: modalRole === 'validator'
-                      ? 'rgba(231,199,101,.1)' : 'rgba(45,201,34,.1)',
-                    padding: '3px 8px', borderRadius: 4, letterSpacing: '.06em',
+                      ? 'rgba(231,199,101,.12)' : 'var(--gb)',
+                    padding: '3px 8px', borderRadius: 6, letterSpacing: '.06em',
                   }}>
                     {modalRole.toUpperCase()}
                   </span>
@@ -551,19 +522,19 @@ export function AppShell() {
                     onClick={() => connectWith('privy')}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 14,
-                      background: 'rgba(45,201,34,.1)', border: '1px solid rgba(45,201,34,.35)',
-                      borderRadius: 10, marginBottom: 10,
+                      background: 'var(--gb)', border: '1px solid var(--gd)',
+                      borderRadius: 12, marginBottom: 10,
                       padding: '14px 16px', cursor: 'pointer', width: '100%', textAlign: 'left',
                     }}
                   >
                     <span style={{
-                      width: 34, height: 34, background: 'var(--g)',
-                      borderRadius: 8, display: 'grid', placeItems: 'center',
+                      width: 36, height: 36, background: 'var(--g)',
+                      borderRadius: 10, display: 'grid', placeItems: 'center',
                       fontFamily: SYNE, fontWeight: 800, fontSize: 15, color: 'var(--bg)', flexShrink: 0,
                     }}>@</span>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontFamily: SYNE, fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>Google or Email</div>
-                      <div style={{ fontFamily: MONO, fontSize: 9, color: 'var(--mut)', marginTop: 2 }}>No extension. A wallet is created for you</div>
+                      <div style={{ fontFamily: SYNE, fontWeight: 700, fontSize: 14, color: 'var(--ink)' }}>{t('wallet.privyTitle')}</div>
+                      <div style={{ fontFamily: INTER, fontSize: 12, color: 'var(--mut)', marginTop: 2 }}>{t('wallet.privySub')}</div>
                     </div>
                     <span style={{ color: 'var(--g)', fontSize: 14 }}>→</span>
                   </button>
@@ -575,18 +546,18 @@ export function AppShell() {
                   style={{
                     display: 'flex', alignItems: 'center', gap: 14,
                     background: 'var(--surf2)', border: '1px solid var(--bd)',
-                    borderRadius: '10px 10px 0 0',
+                    borderRadius: '12px 12px 0 0',
                     padding: '14px 16px', cursor: 'pointer', width: '100%', textAlign: 'left',
                   }}
                 >
                   <span style={{
-                    width: 34, height: 34, background: '#E84142',
-                    borderRadius: 8, display: 'grid', placeItems: 'center',
+                    width: 36, height: 36, background: '#E84142',
+                    borderRadius: 10, display: 'grid', placeItems: 'center',
                     fontFamily: SYNE, fontWeight: 800, fontSize: 14, color: '#fff', flexShrink: 0,
                   }}>▲</span>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontFamily: SYNE, fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>Core</div>
-                    <div style={{ fontFamily: MONO, fontSize: 9, color: 'var(--mut)', marginTop: 2 }}>Avalanche wallet</div>
+                    <div style={{ fontFamily: SYNE, fontWeight: 700, fontSize: 14, color: 'var(--ink)' }}>Core Wallet</div>
+                    <div style={{ fontFamily: INTER, fontSize: 12, color: 'var(--mut)', marginTop: 2 }}>{t('wallet.coreSub')}</div>
                   </div>
                   <span style={{ color: 'var(--mut)', fontSize: 12 }}>↗</span>
                 </button>
@@ -602,13 +573,13 @@ export function AppShell() {
                   }}
                 >
                   <span style={{
-                    width: 34, height: 34, background: '#F6851B',
-                    borderRadius: 8, display: 'grid', placeItems: 'center',
+                    width: 36, height: 36, background: '#F6851B',
+                    borderRadius: 10, display: 'grid', placeItems: 'center',
                     fontFamily: SYNE, fontWeight: 800, fontSize: 14, color: '#fff', flexShrink: 0,
                   }}>M</span>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontFamily: SYNE, fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>MetaMask</div>
-                    <div style={{ fontFamily: MONO, fontSize: 9, color: 'var(--mut)', marginTop: 2 }}>Browser extension</div>
+                    <div style={{ fontFamily: SYNE, fontWeight: 700, fontSize: 14, color: 'var(--ink)' }}>MetaMask</div>
+                    <div style={{ fontFamily: INTER, fontSize: 12, color: 'var(--mut)', marginTop: 2 }}>{t('wallet.metamaskSub')}</div>
                   </div>
                   <span style={{ color: 'var(--mut)', fontSize: 12 }}>↗</span>
                 </button>
@@ -619,25 +590,25 @@ export function AppShell() {
                   style={{
                     display: 'flex', alignItems: 'center', gap: 14,
                     background: 'var(--surf2)', border: '1px solid var(--bd)', borderTop: 'none',
-                    borderRadius: '0 0 10px 10px',
+                    borderRadius: '0 0 12px 12px',
                     padding: '14px 16px', cursor: 'pointer', width: '100%', textAlign: 'left',
                   }}
                 >
                   <span style={{
-                    width: 34, height: 34, background: '#F5A623',
-                    borderRadius: 8, display: 'grid', placeItems: 'center',
+                    width: 36, height: 36, background: '#F5A623',
+                    borderRadius: 10, display: 'grid', placeItems: 'center',
                     fontFamily: SYNE, fontWeight: 800, fontSize: 13, color: '#fff', flexShrink: 0,
                   }}>98</span>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontFamily: SYNE, fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>Coin98</div>
-                    <div style={{ fontFamily: MONO, fontSize: 9, color: 'var(--mut)', marginTop: 2 }}>Multi-chain wallet</div>
+                    <div style={{ fontFamily: SYNE, fontWeight: 700, fontSize: 14, color: 'var(--ink)' }}>Coin98</div>
+                    <div style={{ fontFamily: INTER, fontSize: 12, color: 'var(--mut)', marginTop: 2 }}>{t('wallet.coin98Sub')}</div>
                   </div>
                   <span style={{ color: 'var(--mut)', fontSize: 12 }}>↗</span>
                 </button>
 
                 {wallet.error && (
                   <p style={{
-                    fontFamily: MONO, fontSize: 8, color: 'var(--sal-danger)',
+                    fontFamily: MONO, fontSize: 12, color: 'var(--sal-danger)',
                     textAlign: 'center', margin: '12px 0 0',
                   }}>
                     {wallet.error}
@@ -645,10 +616,10 @@ export function AppShell() {
                 )}
 
                 <p style={{
-                  fontFamily: MONO, fontSize: 8, letterSpacing: '.06em',
-                  color: 'var(--faint)', textAlign: 'center', margin: '16px 0 0',
+                  fontFamily: INTER, fontSize: 12,
+                  color: 'var(--faint)', textAlign: 'center', margin: '14px 0 0',
                 }}>
-                  YOU APPROVE EVERY TRANSACTION
+                  {t('wallet.approveNote')}
                 </p>
               </div>
             )}

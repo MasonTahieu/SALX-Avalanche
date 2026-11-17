@@ -4,7 +4,7 @@ import type { Certificate } from '../../types/domain';
 // Shared building blocks for the dashboard tabs (Portfolio, Certificates) so both
 // speak the same visual language: mono labels, Syne headings, --surf panels.
 export const MONO = "'JetBrains Mono', monospace";
-export const SYNE = "'Syne', sans-serif";
+export const SYNE = "'Be Vietnam Pro', sans-serif";
 
 export function Reveal({ children, delay = 0 }: { children: ReactNode; delay?: number }) {
   const ref = useRef<HTMLDivElement>(null);

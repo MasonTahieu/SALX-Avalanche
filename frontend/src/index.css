@@ -1,50 +1,54 @@
 @import "tailwindcss";
 
 /* ===================================================================
-   Design tokens — dark (default)
+   Design tokens — dark (default: #050A14 Midnight Tech)
 =================================================================== */
 :root {
   /* Core palette */
-  --bg:#0b1311; --surf:#101c18; --surf2:#162119;
-  --ink:#ede7dc; --mut:#9ea5a8; --faint:#8ba69b;
-  --g:#2dc922; --g-text:#2dc922; --gd:rgba(45,201,34,.18); --gb:rgba(45,201,34,.08);
-  --bd:rgba(237,231,220,.12); --bd2:rgba(237,231,220,.22);
-  --bd-soft:rgba(237,231,220,.10); --bd-mid:rgba(237,231,220,.14); --bd-str:rgba(237,231,220,.18);
-  --hdr:rgba(11,19,17,.92); --org:#e8913c; --gold:#e7c765;
+  --bg:#050A14; --surf:#0B1324; --surf2:#121D33;
+  --ink:#F1F5F9; --mut:#94A3B8; --faint:#64748B;
+  --g:#00E5A3; --g-text:#00E5A3; --gd:rgba(0,229,163,.22); --gb:rgba(0,229,163,.09);
+  --cyan:#38BDF8;
+  --avax:#E84142; --avax-bg:rgba(232,65,66,.12); --avax-bd:rgba(232,65,66,.35);
+  --bd:rgba(148,163,184,.16); --bd2:rgba(148,163,184,.28);
+  --bd-soft:rgba(148,163,184,.10); --bd-mid:rgba(148,163,184,.18); --bd-str:rgba(148,163,184,.24);
+  --hdr:rgba(5,10,20,.86); --org:#F59E0B; --gold:#FBBF24;
   --admin-page-gold:var(--gold);
-  /* Typography */
-  --font-display:'Syne',sans-serif;
-  --font-body:'Sora',sans-serif;
-  --font-mono:'IBM Plex Mono','JetBrains Mono',monospace;
+  /* Typography — 100% Vietnamese-ready */
+  --font-display:'Be Vietnam Pro',sans-serif;
+  --font-body:'Inter',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
   --logo-filter:none;
-  --hero-glow:0 0 30px rgba(45,201,34,.22);
+  --hero-glow:0 0 36px rgba(0,229,163,.28);
   /* Compat aliases — phased out as pages are redesigned */
   --sal-bg:var(--bg); --sal-surface:var(--surf); --sal-surface-soft:var(--surf2);
   --sal-text:var(--ink); --sal-muted:var(--mut);
-  --sal-primary:var(--g); --sal-primary-strong:#1a9e14;
-  --sal-border:var(--bd); --sal-danger:#e25b50; --sal-warning:#e2aa48;
+  --sal-primary:var(--g); --sal-primary-strong:#00C48C;
+  --sal-border:var(--bd); --sal-danger:#F43F5E; --sal-warning:#FBBF24;
   --sal-header:var(--hdr); --sal-input:var(--surf2);
-  --sal-shadow:0 22px 70px rgba(0,0,0,.28); --sal-radius:12px;
+  --sal-shadow:0 22px 70px rgba(0,0,0,.38); --sal-radius:16px;
 }
 
 /* ===================================================================
    Light mode overrides (toggle via data-theme="light" on <html>)
 =================================================================== */
 [data-theme="light"] {
-  --bg:#F1EFE7; --surf:#eff2ef; --surf2:#e5eae5;
-  --ink:#0f1c0e; --mut:#516851; --faint:#7a8e7a;
-  --g:#138f0e; --g-text:#0f7a0b; --gd:rgba(19,143,14,.13); --gb:rgba(19,143,14,.07);
-  --bd:rgba(15,28,14,.18); --bd2:rgba(15,28,14,.28);
-  --bd-soft:rgba(15,28,14,.12); --bd-mid:rgba(15,28,14,.16); --bd-str:rgba(15,28,14,.20);
-  --hdr:rgba(241,239,231,.92);
-  --admin-page-gold:#765600;
+  --bg:#F8FAFC; --surf:#FFFFFF; --surf2:#EEF2F7;
+  --ink:#0F172A; --mut:#475569; --faint:#64748B;
+  --g:#059669; --g-text:#047857; --gd:rgba(5,150,105,.18); --gb:rgba(5,150,105,.08);
+  --cyan:#0284C7;
+  --avax:#DC2626; --avax-bg:rgba(220,38,38,.09); --avax-bd:rgba(220,38,38,.28);
+  --bd:rgba(15,23,42,.12); --bd2:rgba(15,23,42,.22);
+  --bd-soft:rgba(15,23,42,.08); --bd-mid:rgba(15,23,42,.12); --bd-str:rgba(15,23,42,.18);
+  --hdr:rgba(248,250,252,.88);
+  --admin-page-gold:#B45309;
   --logo-filter:brightness(0) saturate(100%);
-  --hero-glow:0 0 30px rgba(19,143,14,.15);
+  --hero-glow:0 0 28px rgba(5,150,105,.15);
   /* Compat */
-  --sal-primary:#138f0e; --sal-bg:var(--bg); --sal-surface:var(--surf);
+  --sal-primary:#059669; --sal-bg:var(--bg); --sal-surface:var(--surf);
   --sal-surface-soft:var(--surf2); --sal-text:var(--ink); --sal-muted:var(--mut);
   --sal-border:var(--bd); --sal-header:var(--hdr); --sal-input:var(--surf);
-  --sal-shadow:0 18px 56px rgba(3,52,38,.07); --sal-radius:12px;
+  --sal-shadow:0 18px 56px rgba(15,23,42,.08); --sal-radius:16px;
 }
 
 /* ── Light mode: hardcoded-dark overrides ── */
@@ -76,8 +80,22 @@
 /* ===================================================================
    Global resets
 =================================================================== */
-*{box-sizing:border-box} html{scroll-behavior:smooth}
-body{margin:0;min-width:320px;min-height:100vh;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-synthesis:none;transition:background .2s,color .2s;overflow-x:hidden}
+*{box-sizing:border-box} html{scroll-behavior:smooth;font-size:16px}
+body{margin:0;min-width:320px;min-height:100vh;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:14px;line-height:1.55;font-synthesis:none;transition:background .2s,color .2s;overflow-x:hidden}
+.tabular-nums{font-variant-numeric:tabular-nums}
+
+/* Cursor-reactive interactive spotlight + tech grid */
+.cursor-ambient-glow{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(560px circle at var(--mx,50%) var(--my,30%),rgba(0,229,163,.16),rgba(56,189,248,.08) 38%,transparent 68%),radial-gradient(460px circle at calc(100% - var(--mx,50%)) calc(100% - var(--my,30%)),rgba(232,65,66,.08),transparent 60%);transition:opacity .25s ease}
+.cursor-ambient-grid{position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(to right,rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(to bottom,rgba(0,229,163,.11) 1px,transparent 1px);background-size:44px 44px;-webkit-mask-image:radial-gradient(380px circle at var(--mx,50%) var(--my,30%),rgba(0,0,0,.95),transparent 78%);mask-image:radial-gradient(380px circle at var(--mx,50%) var(--my,30%),rgba(0,0,0,.95),transparent 78%)}
+[data-theme="light"] .cursor-ambient-glow{background:radial-gradient(560px circle at var(--mx,50%) var(--my,30%),rgba(5,150,105,.12),rgba(2,132,199,.07) 38%,transparent 68%),radial-gradient(460px circle at calc(100% - var(--mx,50%)) calc(100% - var(--my,30%)),rgba(220,38,38,.06),transparent 60%)}
+[data-theme="light"] .cursor-ambient-grid{background-image:linear-gradient(to right,rgba(2,132,199,.10) 1px,transparent 1px),linear-gradient(to bottom,rgba(5,150,105,.10) 1px,transparent 1px)}
+
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  .cursor-ambient-glow,.cursor-ambient-grid{display:none}
+  .dc-reveal{opacity:1!important;animation:none!important}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
 button,input,textarea,select{font:inherit;color:inherit} a{color:inherit;text-decoration:none} img{max-width:100%;display:block}
 
 /* ===================================================================
