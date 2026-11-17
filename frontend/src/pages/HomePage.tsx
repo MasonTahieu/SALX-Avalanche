@@ -99,7 +99,7 @@ const ART_BACKGROUNDS = [
   'linear-gradient(155deg,#071b24 0%,#0d303c 100%)',
   'linear-gradient(155deg,#0e1428 0%,#182647 100%)',
 ];
-const MAX_EDITIONS = 6;
+const MAX_EDITIONS = 12;
 
 function buildEditions(listings: Listing[], projects: Project[]): EditionCard[] {
   const projectsById = new Map<number, Project>();

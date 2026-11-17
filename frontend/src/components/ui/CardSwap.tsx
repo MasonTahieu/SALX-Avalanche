@@ -97,34 +97,13 @@ export const CardSwap = forwardRef<CardSwapHandle, CardSwapProps>(({
   easing = 'elastic',
   children,
 }, ref) => {
-  const config = useMemo(
-    () =>
-      easing === 'elastic'
-        ? {
-            ease: 'elastic.out(0.6,0.9)',
-            durDrop: 1.6,
-            durMove: 1.6,
-            durReturn: 1.6,
-            promoteOverlap: 0.85,
-            returnDelay: 0.05,
-          }
-        : {
-            ease: 'power2.inOut',
-            durDrop: 0.7,
-            durMove: 0.7,
-            durReturn: 0.7,
-            promoteOverlap: 0.45,
-            returnDelay: 0.2,
-          },
-    [easing],
-  );
-
   const childArr = useMemo(() => Children.toArray(children) as ReactElement<CardProps>[], [children]);
   const refs = useMemo<CardRef[]>(() => childArr.map(() => React.createRef<HTMLDivElement>()), [childArr.length]);
   const order = useRef<number[]>(Array.from({ length: childArr.length }, (_, i) => i));
   const tlRef = useRef<gsap.core.Timeline | null>(null);
   const intervalRef = useRef<number>(0);
   const container = useRef<HTMLDivElement>(null);
+  const hoveredRef = useRef(false);
 
   const layoutInstant = useCallback((nextOrder: number[]) => {
     order.current = nextOrder;
@@ -139,121 +118,81 @@ export const CardSwap = forwardRef<CardSwapHandle, CardSwapProps>(({
     if (nextOrder.length > 0) onActiveChange?.(nextOrder[0]);
   }, [refs, cardDistance, verticalDistance, skewAmount, onActiveChange]);
 
-  const swapNext = useCallback(() => {
-    if (order.current.length < 2) return;
-    if (tlRef.current?.isActive()) return;
+  const animateOrder = useCallback((nextOrder: number[], droppedIdx?: number) => {
+    const total = refs.length;
+    if (total === 0) return;
 
-    const [front, ...rest] = order.current;
-    const elFront = refs[front]?.current;
-    if (!elFront) return;
+    // Kill any in-flight timeline or tweens so rapid Prev/Next clicks never desync.
+    tlRef.current?.kill();
+    refs.forEach((r) => {
+      if (r.current) gsap.killTweensOf(r.current);
+    });
+
+    order.current = nextOrder;
+    onActiveChange?.(nextOrder[0]);
 
     const tl = gsap.timeline();
     tlRef.current = tl;
+    const ease = easing === 'elastic' ? 'back.out(1.25)' : 'power2.out';
 
-    tl.to(elFront, {
-      y: '+=460',
-      duration: config.durDrop,
-      ease: config.ease,
-    });
-
-    tl.addLabel('promote', `-=${config.durDrop * config.promoteOverlap}`);
-    onActiveChange?.(rest[0]);
-    rest.forEach((idx, i) => {
+    nextOrder.forEach((idx, slotIdx) => {
       const el = refs[idx]?.current;
       if (!el) return;
-      const slot = makeSlot(i, cardDistance, verticalDistance, refs.length);
-      tl.set(el, { zIndex: slot.zIndex }, 'promote');
-      tl.to(
-        el,
-        {
-          x: slot.x,
-          y: slot.y,
-          z: slot.z,
-          duration: config.durMove,
-          ease: config.ease,
-        },
-        `promote+=${i * 0.12}`,
-      );
+      const slot = makeSlot(slotIdx, cardDistance, verticalDistance, total);
+      if (idx === droppedIdx) {
+        // Drop smoothly and tuck to the back slot
+        tl.to(el, { y: slot.y + 180, duration: 0.22, ease: 'power2.in' }, 0);
+        tl.set(el, { zIndex: slot.zIndex }, 0.22);
+        tl.to(el, { x: slot.x, y: slot.y, z: slot.z, duration: 0.45, ease }, 0.22);
+      } else {
+        gsap.set(el, { zIndex: slot.zIndex });
+        tl.to(el, { x: slot.x, y: slot.y, z: slot.z, duration: 0.45, ease }, 0.04 * slotIdx);
+      }
     });
+  }, [refs, cardDistance, verticalDistance, easing, onActiveChange]);
 
-    const backSlot = makeSlot(refs.length - 1, cardDistance, verticalDistance, refs.length);
-    tl.addLabel('return', `promote+=${config.durMove * config.returnDelay}`);
-    tl.call(
-      () => {
-        gsap.set(elFront, { zIndex: backSlot.zIndex });
-      },
-      undefined,
-      'return',
-    );
-
-    tl.to(
-      elFront,
-      {
-        x: backSlot.x,
-        y: backSlot.y,
-        z: backSlot.z,
-        duration: config.durReturn,
-        ease: config.ease,
-      },
-      'return',
-    );
-
-    tl.call(() => {
-      order.current = [...rest, front];
-    });
-  }, [refs, cardDistance, verticalDistance, config, onActiveChange]);
+  const swapNext = useCallback(() => {
+    if (order.current.length < 2) return;
+    const [front, ...rest] = order.current;
+    animateOrder([...rest, front], front);
+  }, [animateOrder]);
 
   const swapPrev = useCallback(() => {
     if (order.current.length < 2) return;
-    tlRef.current?.kill();
     const last = order.current[order.current.length - 1];
     const rest = order.current.slice(0, -1);
-    const nextOrder = [last, ...rest];
-    order.current = nextOrder;
-    onActiveChange?.(last);
-
-    nextOrder.forEach((idx, i) => {
-      const el = refs[idx]?.current;
-      if (!el) return;
-      const slot = makeSlot(i, cardDistance, verticalDistance, refs.length);
-      gsap.set(el, { zIndex: slot.zIndex });
-      gsap.to(el, {
-        x: slot.x,
-        y: slot.y,
-        z: slot.z,
-        duration: 0.6,
-        ease: 'power2.out',
-      });
-    });
-  }, [refs, cardDistance, verticalDistance, onActiveChange]);
+    animateOrder([last, ...rest]);
+  }, [animateOrder]);
 
   const goTo = useCallback((targetIdx: number) => {
     const pos = order.current.indexOf(targetIdx);
     if (pos <= 0) return;
-    tlRef.current?.kill();
     const rotated = [...order.current.slice(pos), ...order.current.slice(0, pos)];
-    order.current = rotated;
-    onActiveChange?.(targetIdx);
-    rotated.forEach((idx, i) => {
-      const el = refs[idx]?.current;
-      if (!el) return;
-      const slot = makeSlot(i, cardDistance, verticalDistance, refs.length);
-      gsap.set(el, { zIndex: slot.zIndex });
-      gsap.to(el, {
-        x: slot.x,
-        y: slot.y,
-        z: slot.z,
-        duration: 0.55,
-        ease: 'power2.out',
-      });
-    });
-  }, [refs, cardDistance, verticalDistance, onActiveChange]);
+    animateOrder(rotated);
+  }, [animateOrder]);
+
+  const resetTimer = useCallback(() => {
+    clearInterval(intervalRef.current);
+    const reducedMotion =
+      typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reducedMotion || refs.length < 2 || hoveredRef.current) return;
+    intervalRef.current = window.setInterval(swapNext, delay);
+  }, [delay, refs.length, swapNext]);
 
   useImperativeHandle(ref, () => ({
-    next: swapNext,
-    prev: swapPrev,
-    goTo,
-  }), [swapNext, swapPrev, goTo]);
+    next: () => {
+      swapNext();
+      resetTimer();
+    },
+    prev: () => {
+      swapPrev();
+      resetTimer();
+    },
+    goTo: (idx: number) => {
+      goTo(idx);
+      resetTimer();
+    },
+  }), [swapNext, swapPrev, goTo, resetTimer]);
 
   useEffect(() => {
     const initial = Array.from({ length: childArr.length }, (_, i) => i);
@@ -268,11 +207,11 @@ export const CardSwap = forwardRef<CardSwapHandle, CardSwapProps>(({
     if (pauseOnHover && container.current) {
       const node = container.current;
       const pause = () => {
-        tlRef.current?.pause();
+        hoveredRef.current = true;
         clearInterval(intervalRef.current);
       };
       const resume = () => {
-        tlRef.current?.play();
+        hoveredRef.current = false;
         clearInterval(intervalRef.current);
         intervalRef.current = window.setInterval(swapNext, delay);
       };
