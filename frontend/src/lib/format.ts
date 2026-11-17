@@ -10,3 +10,38 @@ export const formatCO2 = (kg: number | null | undefined, locale?: string) => {
   if (value < 1000) return `${formatNumber(value, 1, locale)} kg CO₂e`;
   return `${formatNumber(value / 1000, value < 10_000 ? 2 : 1, locale)} tCO₂e`;
 };
+// Tỷ giá tham chiếu phục vụ hiển thị ước tính cho doanh nghiệp SME
+export const AVAX_USD_RATE = 25; // 1 AVAX ~ $25 USDC
+export const USD_VND_RATE = 25400; // 1 USD ~ 25,400 VNĐ
+
+export function formatAvaxFiatHint(weiValue: string | bigint | number | null | undefined): string {
+  if (weiValue === null || weiValue === undefined || weiValue === "") return "";
+  try {
+    const avax = Number(ethers.formatEther(BigInt(weiValue)));
+    if (!Number.isFinite(avax) || avax <= 0) return "";
+    return formatAvaxAmountFiatHint(avax);
+  } catch {
+    return "";
+  }
+}
+
+export function formatAvaxAmountFiatHint(avaxAmount: number): string {
+  if (!Number.isFinite(avaxAmount) || avaxAmount <= 0) return "";
+  const usd = avaxAmount * AVAX_USD_RATE;
+  const vnd = usd * USD_VND_RATE;
+
+  const usdStr =
+    usd < 0.01
+      ? "< $0.01 USDC"
+      : `$${usd.toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })} USDC`;
+
+  const vndStr =
+    vnd < 100
+      ? "< 100 ₫"
+      : `${Math.round(vnd).toLocaleString("vi-VN")} ₫`;
+
+  return `≈ ${usdStr} · ${vndStr}`;
+}

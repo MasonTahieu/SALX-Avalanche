@@ -1,4 +1,6 @@
 import { useEffect, useRef } from 'react';
+import type { Certificate } from '../../types/domain';
+import { exportEsgAuditPdf } from '../../lib/esgAuditPdf';
 import './CertificateLightbox.css';
 
 interface Props {
@@ -8,11 +10,13 @@ interface Props {
   downloadUrl: string;
   title: string;
   alt: string;
+  /** Pass the Certificate object to enable the "Export ESG Audit PDF" button. */
+  cert?: Certificate;
 }
 
 // Full-screen view of a certificate image. Nothing is downloaded unless the
 // holder presses Download. Closes on Esc, the ✕ button or a click outside.
-export function CertificateLightbox({ open, onClose, imageUrl, downloadUrl, title, alt }: Props) {
+export function CertificateLightbox({ open, onClose, imageUrl, downloadUrl, title, alt, cert }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
 
@@ -53,6 +57,16 @@ export function CertificateLightbox({ open, onClose, imageUrl, downloadUrl, titl
             <a className="cert-lightbox__download" href={downloadUrl} download>
               Download PNG
             </a>
+            {cert && (
+              <button
+                type="button"
+                className="cert-lightbox__export-pdf"
+                onClick={() => exportEsgAuditPdf(cert)}
+                title="Export ESG Audit PDF"
+              >
+                Export ESG Audit PDF
+              </button>
+            )}
             <button ref={closeRef} type="button" className="cert-lightbox__close" onClick={onClose} aria-label="Close">
               ✕
             </button>

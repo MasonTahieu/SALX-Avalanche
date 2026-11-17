@@ -6,6 +6,7 @@ import { ApiError } from '../services/api';
 import { certificateOnChain } from '../services/blockchain';
 import { env } from '../config/env';
 import { formatCO2, formatDate, shortAddress } from '../lib/format';
+import { exportEsgAuditPdf } from '../lib/esgAuditPdf';
 import {
   facebookShareUrl,
   linkedInShareUrl,
@@ -237,6 +238,15 @@ export function VerifyCertificatePage() {
                   <button type="button" className="verify__button" onClick={copyLink}>{copied ? 'Link copied ✓' : 'Copy link'}</button>
                   <a className="verify__button" href={qrDownload} download={`SALX-SBT-${tokenId}-QR.svg`}>Download QR</a>
                   <button type="button" className="verify__button" onClick={() => window.print()}>Print or save as PDF</button>
+                  {stored && (
+                    <button
+                      type="button"
+                      className="verify__button verify__button--esg"
+                      onClick={() => exportEsgAuditPdf(stored)}
+                    >
+                      📄 Export ESG Audit PDF
+                    </button>
+                  )}
                 </div>
               </section>
             )}
