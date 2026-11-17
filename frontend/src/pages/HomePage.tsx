@@ -5,6 +5,8 @@ import {
   ArrowUpRight,
   Award,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Coins,
   ExternalLink,
   FileCheck2,
@@ -23,7 +25,7 @@ import { formatNumber } from '../lib/format';
 import { FootprintCalculator } from '../components/home/FootprintCalculator';
 import { certBadge } from '../components/marketplace/certBadge';
 import { ProjectCover } from '../components/project/ProjectCover';
-import { CardSwap, Card } from '../components/ui/CardSwap';
+import { CardSwap, Card, type CardSwapHandle } from '../components/ui/CardSwap';
 import { EmptyState, ErrorState, LoadingSkeleton } from '../components/ui/StateViews';
 import { useLanguage } from '../contexts/LanguageContext';
 import type { Listing, Project, Stats } from '../types/domain';
@@ -62,14 +64,13 @@ function CountUpNumber({ value, decimals = 0 }: { value: number; decimals?: numb
       setDisplay(value);
       return;
     }
-    const start = 0;
     const duration = 650;
     const t0 = performance.now();
     let frame = 0;
     const tick = (now: number) => {
       const p = Math.min(1, (now - t0) / duration);
       const eased = 1 - Math.pow(1 - p, 3);
-      setDisplay(start + (value - start) * eased);
+      setDisplay(value * eased);
       if (p < 1) frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
@@ -94,9 +95,9 @@ interface EditionCard {
 }
 
 const ART_BACKGROUNDS = [
-  'linear-gradient(155deg,#071a14 0%,#123125 100%)',
-  'linear-gradient(155deg,#081b21 0%,#0f2e36 100%)',
-  'linear-gradient(155deg,#171a09 0%,#262a10 100%)',
+  'linear-gradient(155deg,#081529 0%,#0f293a 100%)',
+  'linear-gradient(155deg,#071b24 0%,#0d303c 100%)',
+  'linear-gradient(155deg,#0e1428 0%,#182647 100%)',
 ];
 const MAX_EDITIONS = 6;
 
@@ -144,7 +145,8 @@ const hasSampleCertificate =
 
 export function HomePage() {
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const swapRef = useRef<CardSwapHandle>(null);
 
   const [stats, setStats] = useState<Stats | null>(null);
   const [activeListingsCount, setActiveListingsCount] = useState<number>(0);
@@ -184,23 +186,27 @@ export function HomePage() {
 
   const activeEdition = editionsState.editions[activeSwapIdx] ?? editionsState.editions[0] ?? null;
 
+  const openProjectOnMarketplace = (projectId: number) => {
+    navigate(`/marketplace?projectId=${projectId}`);
+  };
+
   const contracts = [
     {
       name: 'SAL1155',
       std: 'ERC-1155',
-      role: 'Token tín chỉ carbon (1 SAL = 10 kg CO₂e)',
+      role: language === 'vi' ? 'Token tín chỉ carbon (1 SAL = 10 kg CO₂e)' : 'Carbon credit token (1 SAL = 10 kg CO₂e)',
       address: env.sal1155Address,
     },
     {
       name: 'GreenCertificateSBT',
       std: 'ERC-721 Soulbound',
-      role: 'Chứng chỉ xanh không thể chuyển nhượng',
+      role: language === 'vi' ? 'Chứng chỉ xanh không thể chuyển nhượng' : 'Non-transferable green retirement certificate',
       address: env.certificateAddress,
     },
     {
       name: 'SALMarketplace',
       std: 'Core Escrow & Governance',
-      role: 'Nộp dự án, vote validator, niêm yết & retire',
+      role: language === 'vi' ? 'Nộp dự án, vote validator, niêm yết & retire' : 'Project registry, validator voting, escrow & retire',
       address: env.marketplaceAddress,
     },
   ];
@@ -209,49 +215,222 @@ export function HomePage() {
 
   return (
     <div className="home-v2" style={{ animation: 'fadeUp .35s ease' }}>
-      {/* ── HERO ── */}
+      {/* ── HERO + LIVE CARDSWAP SHOWCASE ── */}
       <section className="home-v2-hero">
-        <div className="home-v2-avax-badge">
-          <span aria-hidden="true">▲</span>
-          <span>{t('home.badge')}</span>
-        </div>
+        <div className="home-v2-hero-grid">
+          <div>
+            <div className="home-v2-avax-badge">
+              <span aria-hidden="true">▲</span>
+              <span>{t('home.badge')}</span>
+            </div>
 
-        <h1 className="home-v2-h1">
-          {t('home.heroTitle1')}{' '}
-          <span style={{ color: 'var(--g-text)', textShadow: 'var(--hero-glow)' }}>
-            {t('home.heroTitle2')}
-          </span>
-        </h1>
+            <h1 className="home-v2-h1">
+              {t('home.heroTitle1')}{' '}
+              <span className="home-v2-gradient-text">{t('home.heroTitle2')}</span>
+            </h1>
 
-        <p className="home-v2-lead">{t('home.heroSub')}</p>
+            <p className="home-v2-lead">{t('home.heroSub')}</p>
 
-        <div className="home-v2-cta-row">
-          <Link to="/marketplace" className="home-v2-btn-primary">
-            <span>{t('home.ctaMarket')}</span>
-            <ArrowRight size={17} />
-          </Link>
-          <Link to="/submit" className="home-v2-btn-secondary">
-            <span>{t('home.ctaSubmit')}</span>
-            <ArrowUpRight size={17} />
-          </Link>
-          {hasSampleCertificate && (
-            <Link
-              to="/verify/2"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                fontFamily: 'var(--font-mono)',
-                fontSize: 13,
-                color: 'var(--g-text)',
-                padding: '8px 4px',
-                textDecoration: 'underline',
-                textUnderlineOffset: 4,
-              }}
-            >
-              {t('home.ctaSampleCert')} ↗
-            </Link>
-          )}
+            <div className="home-v2-cta-row">
+              <Link to="/marketplace" className="home-v2-btn-primary">
+                <span>{t('home.ctaMarket')}</span>
+                <ArrowRight size={17} />
+              </Link>
+              <Link to="/submit" className="home-v2-btn-secondary">
+                <span>{t('home.ctaSubmit')}</span>
+                <ArrowUpRight size={17} />
+              </Link>
+              {hasSampleCertificate && (
+                <Link
+                  to="/verify/2"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 13,
+                    color: 'var(--g-text)',
+                    padding: '8px 4px',
+                    textDecoration: 'underline',
+                    textUnderlineOffset: 4,
+                  }}
+                >
+                  {t('home.ctaSampleCert')} ↗
+                </Link>
+              )}
+            </div>
+          </div>
+
+          {/* Right: Interactive CardSwap right at top of HomePage */}
+          <div className="home-v2-cardswap-wrap">
+            {editionsState.status === 'loading' && (
+              <div style={{ width: '100%', maxWidth: 360 }}>
+                <LoadingSkeleton rows={1} />
+              </div>
+            )}
+
+            {editionsState.status === 'error' && (
+              <div style={{ width: '100%', maxWidth: 380 }}>
+                <ErrorState
+                  title={t('common.serverWakingTitle')}
+                  description={t('common.serverWakingSub')}
+                  onRetry={() => setReloadTick((n) => n + 1)}
+                  retryLabel={t('common.retry')}
+                />
+              </div>
+            )}
+
+            {editionsState.status === 'ready' && editionsState.editions.length === 0 && (
+              <div style={{ width: '100%', maxWidth: 380 }}>
+                <EmptyState
+                  title={t('home.featEmpty')}
+                  description={t('home.heroSub')}
+                  action={
+                    <Link to="/submit" className="home-v2-btn-primary">
+                      {t('home.ctaSubmit')} <ArrowRight size={16} />
+                    </Link>
+                  }
+                />
+              </div>
+            )}
+
+            {editionsState.status === 'ready' && editionsState.editions.length > 0 && (
+              <>
+                <CardSwap
+                  ref={swapRef}
+                  width={340}
+                  height={315}
+                  cardDistance={34}
+                  verticalDistance={32}
+                  delay={4000}
+                  pauseOnHover={true}
+                  skewAmount={4}
+                  easing="elastic"
+                  onActiveChange={(idx) => setActiveSwapIdx(idx)}
+                  onCardClick={(idx) => {
+                    const clicked = editionsState.editions[idx];
+                    if (clicked) openProjectOnMarketplace(clicked.projectId);
+                  }}
+                >
+                  {editionsState.editions.map((ed) => (
+                    <Card key={ed.id} className="overflow-hidden cursor-pointer">
+                      <div style={{ position: 'relative', height: '100%', width: '100%', display: 'flex', flexDirection: 'column', background: ed.artBg }}>
+                        <div style={{ position: 'relative', flex: 1, overflow: 'hidden' }}>
+                          <ProjectCover project={ed.project} projectId={ed.projectId} />
+                          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(5,10,20,0.92) 8%, rgba(5,10,20,0.22) 58%, transparent 100%)' }} />
+                          <span
+                            style={{
+                              position: 'absolute',
+                              top: 12,
+                              left: 12,
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: 11,
+                              fontWeight: 600,
+                              padding: '4px 10px',
+                              borderRadius: 999,
+                              background: ed.badgeBg,
+                              color: ed.badgeColor,
+                            }}
+                          >
+                            {ed.badge}
+                          </span>
+                          <span
+                            style={{
+                              position: 'absolute',
+                              top: 12,
+                              right: 12,
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: 11,
+                              padding: '4px 10px',
+                              borderRadius: 999,
+                              background: 'rgba(5,10,20,0.75)',
+                              color: '#F1F5F9',
+                              border: '1px solid rgba(148,163,184,0.32)',
+                            }}
+                          >
+                            {ed.id}
+                          </span>
+                        </div>
+                        <div style={{ padding: '14px 16px', background: 'var(--surf)', borderTop: '1px solid var(--bd)' }}>
+                          <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: 'var(--ink)' }}>
+                            {ed.title}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--mut)' }}>{ed.meta}</span>
+                            <strong style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--g-text)' }}>{ed.price}</strong>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </CardSwap>
+
+                {/* Prev / Dots / Next controls */}
+                <div className="home-v2-swap-controls">
+                  <button
+                    type="button"
+                    className="home-v2-swap-btn"
+                    onClick={() => swapRef.current?.prev()}
+                    aria-label={language === 'vi' ? 'Dự án trước' : 'Previous project'}
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {editionsState.editions.map((ed, idx) => {
+                      const active = idx === activeSwapIdx;
+                      return (
+                        <button
+                          key={ed.id}
+                          type="button"
+                          onClick={() => swapRef.current?.goTo(idx)}
+                          aria-label={ed.title}
+                          style={{
+                            width: active ? 22 : 8,
+                            height: 8,
+                            borderRadius: 999,
+                            border: 'none',
+                            cursor: 'pointer',
+                            background: active ? 'var(--g)' : 'var(--bd2)',
+                            transition: 'width 0.2s ease, background 0.2s ease',
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    type="button"
+                    className="home-v2-swap-btn"
+                    onClick={() => swapRef.current?.next()}
+                    aria-label={language === 'vi' ? 'Dự án tiếp theo' : 'Next project'}
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
+
+                {activeEdition && (
+                  <button
+                    type="button"
+                    onClick={() => openProjectOnMarketplace(activeEdition.projectId)}
+                    style={{
+                      marginTop: 10,
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--cyan)',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 12,
+                      cursor: 'pointer',
+                      textDecoration: 'underline',
+                      textUnderlineOffset: 4,
+                    }}
+                  >
+                    {language === 'vi' ? `Xem & mua "${activeEdition.title}" →` : `Inspect & buy "${activeEdition.title}" →`}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         </div>
 
         {/* Live On-chain / API Stats */}
@@ -277,7 +456,7 @@ export function HomePage() {
             <span style={{ display: 'block', fontSize: 13, color: 'var(--mut)', marginBottom: 6 }}>
               {t('home.statSupply')}
             </span>
-            <strong style={{ fontFamily: 'var(--font-mono)', fontSize: 28, fontWeight: 700, color: 'var(--ink)' }}>
+            <strong style={{ fontFamily: 'var(--font-mono)', fontSize: 28, fontWeight: 700, color: 'var(--cyan)' }}>
               {stats ? <CountUpNumber value={stats.totalAvailableCarbon} /> : '—'}
               <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--mut)', marginLeft: 6 }}>SAL</span>
             </strong>
@@ -321,7 +500,7 @@ export function HomePage() {
                   {item.icon}
                 </div>
                 <h3 style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: 19, fontWeight: 700 }}>{item.title}</h3>
-                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: 'var(--mut)' }}>{item.desc}</p>
+                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.65, color: 'var(--mut)' }}>{item.desc}</p>
               </div>
             ))}
           </div>
@@ -343,13 +522,13 @@ export function HomePage() {
             ].map((s) => (
               <div key={s.step} className="home-v2-card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: 'var(--g-text)' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: 'var(--cyan)' }}>
                     STEP {s.step}
                   </span>
                   <span style={{ color: 'var(--mut)' }}>{s.icon}</span>
                 </div>
                 <h3 style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700 }}>{s.title}</h3>
-                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.58, color: 'var(--mut)' }}>{s.desc}</p>
+                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: 'var(--mut)' }}>{s.desc}</p>
               </div>
             ))}
           </div>
@@ -414,191 +593,6 @@ export function HomePage() {
         </section>
       </Reveal>
 
-      {/* ── 04 / FEATURED PROJECTS WITH CARDSWAP ── */}
-      <Reveal>
-        <section className="home-v2-section">
-          <span className="home-v2-tag">{t('home.featTag')}</span>
-          <h2 className="home-v2-h2">{t('home.featTitle')}</h2>
-          <p className="home-v2-lead" style={{ marginTop: 12 }}>{t('home.featSub')}</p>
-
-          <div style={{ marginTop: 32 }}>
-            {editionsState.status === 'loading' && <LoadingSkeleton rows={3} />}
-            {editionsState.status === 'error' && (
-              <ErrorState
-                title={t('common.serverWakingTitle')}
-                description={t('common.serverWakingSub')}
-                onRetry={() => setReloadTick((n) => n + 1)}
-                retryLabel={t('common.retry')}
-              />
-            )}
-            {editionsState.status === 'ready' && editionsState.editions.length === 0 && (
-              <EmptyState
-                title={t('home.featEmpty')}
-                description={t('home.heroSub')}
-                action={
-                  <Link to="/submit" className="home-v2-btn-primary">
-                    {t('home.ctaSubmit')} <ArrowRight size={16} />
-                  </Link>
-                }
-              />
-            )}
-            {editionsState.status === 'ready' && editionsState.editions.length > 0 && (
-              <div className="home-v2-split">
-                {/* Left: Project selector & active project details */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  {activeEdition && (
-                    <div className="home-v2-card" style={{ borderColor: 'var(--gd)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
-                        <span
-                          style={{
-                            fontFamily: 'var(--font-mono)',
-                            fontSize: 11,
-                            padding: '4px 10px',
-                            borderRadius: 999,
-                            background: activeEdition.badgeBg,
-                            color: activeEdition.badgeColor,
-                          }}
-                        >
-                          {activeEdition.badge}
-                        </span>
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--mut)' }}>
-                          {activeEdition.id}
-                        </span>
-                      </div>
-                      <h3 style={{ margin: '0 0 6px', fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700 }}>
-                        {activeEdition.title}
-                      </h3>
-                      <p style={{ margin: '0 0 14px', fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--mut)' }}>
-                        {activeEdition.meta}
-                      </p>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingTop: 12, borderTop: '1px solid var(--bd-soft)' }}>
-                        <div>
-                          <div style={{ fontSize: 12, color: 'var(--mut)' }}>Giá tốt nhất</div>
-                          <strong style={{ fontFamily: 'var(--font-mono)', fontSize: 18, color: 'var(--g-text)' }}>
-                            {activeEdition.price}
-                          </strong>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => navigate('/marketplace')}
-                          className="home-v2-btn-primary"
-                        >
-                          <span>{t('home.featBuy')}</span>
-                          <ArrowRight size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Quick list of live projects for direct click selection */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {editionsState.editions.map((ed, idx) => {
-                      const isCurrent = idx === activeSwapIdx;
-                      return (
-                        <button
-                          key={ed.id}
-                          type="button"
-                          onClick={() => setActiveSwapIdx(idx)}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            gap: 12,
-                            padding: '12px 16px',
-                            borderRadius: 12,
-                            border: `1px solid ${isCurrent ? 'var(--g)' : 'var(--bd)'}`,
-                            background: isCurrent ? 'var(--gb)' : 'var(--surf)',
-                            color: 'var(--ink)',
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                          }}
-                        >
-                          <div>
-                            <div style={{ fontWeight: 600, fontSize: 14 }}>{ed.title}</div>
-                            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--mut)' }}>{ed.meta}</div>
-                          </div>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--g-text)', whiteSpace: 'nowrap' }}>
-                            {ed.price}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Right: CardSwap Perspective Stack */}
-                <div className="home-v2-cardswap-wrap">
-                  <CardSwap
-                    width={360}
-                    height={330}
-                    cardDistance={38}
-                    verticalDistance={36}
-                    delay={4500}
-                    pauseOnHover={true}
-                    skewAmount={4}
-                    easing="elastic"
-                    onActiveChange={(idx) => setActiveSwapIdx(idx)}
-                    onCardClick={() => navigate('/marketplace')}
-                  >
-                    {editionsState.editions.map((ed) => (
-                      <Card key={ed.id} className="overflow-hidden cursor-pointer">
-                        <div style={{ position: 'relative', height: '100%', width: '100%', display: 'flex', flexDirection: 'column', background: ed.artBg }}>
-                          <div style={{ position: 'relative', flex: 1, overflow: 'hidden' }}>
-                            <ProjectCover project={ed.project} projectId={ed.projectId} />
-                            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(4,17,15,0.92) 8%, rgba(4,17,15,0.25) 55%, transparent 100%)' }} />
-                            <span
-                              style={{
-                                position: 'absolute',
-                                top: 14,
-                                left: 14,
-                                fontFamily: 'var(--font-mono)',
-                                fontSize: 11,
-                                fontWeight: 600,
-                                padding: '4px 10px',
-                                borderRadius: 999,
-                                background: ed.badgeBg,
-                                color: ed.badgeColor,
-                              }}
-                            >
-                              {ed.badge}
-                            </span>
-                            <span
-                              style={{
-                                position: 'absolute',
-                                top: 14,
-                                right: 14,
-                                fontFamily: 'var(--font-mono)',
-                                fontSize: 11,
-                                padding: '4px 10px',
-                                borderRadius: 999,
-                                background: 'rgba(4,17,15,0.72)',
-                                color: '#ede7dc',
-                                border: '1px solid rgba(237,231,220,0.22)',
-                              }}
-                            >
-                              {ed.id}
-                            </span>
-                          </div>
-                          <div style={{ padding: '16px 18px', background: 'var(--surf)', borderTop: '1px solid var(--bd)' }}>
-                            <div style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 700, color: 'var(--ink)' }}>
-                              {ed.title}
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
-                              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--mut)' }}>{ed.meta}</span>
-                              <strong style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--g-text)' }}>{ed.price}</strong>
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </CardSwap>
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-      </Reveal>
-
       {/* ── FOOTPRINT CALCULATOR ── */}
       <FootprintCalculator />
 
@@ -629,7 +623,7 @@ export function HomePage() {
               style={{
                 borderColor: 'var(--gd)',
                 background: 'linear-gradient(145deg, var(--surf), var(--surf2))',
-                boxShadow: '0 24px 64px rgba(0, 0, 0, 0.28)',
+                boxShadow: '0 24px 64px rgba(0, 0, 0, 0.34)',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -676,7 +670,7 @@ export function HomePage() {
                   {item.icon}
                 </div>
                 <h3 style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700 }}>{item.title}</h3>
-                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: 'var(--mut)' }}>{item.desc}</p>
+                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.65, color: 'var(--mut)' }}>{item.desc}</p>
               </div>
             ))}
           </div>

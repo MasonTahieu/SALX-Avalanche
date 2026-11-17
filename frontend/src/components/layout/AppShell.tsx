@@ -13,7 +13,7 @@ import { CursorAmbientGlow } from '../ui/CursorAmbientGlow';
 import './AppShell.css';
 
 const MONO = "'JetBrains Mono', monospace";
-const SYNE = "'Syne', sans-serif";
+const SYNE = "'Be Vietnam Pro', sans-serif";
 const INTER = "'Inter', sans-serif";
 
 type Role = 'user' | 'validator';

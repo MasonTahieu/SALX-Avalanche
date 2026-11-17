@@ -71,7 +71,7 @@ export default function App() {
       <Route path="/certificates"   element={<Navigate to="/dashboard?tab=certificates" replace />} />
       <Route path="/submit-project" element={<Navigate to="/submit" replace />} />
       <Route path="/portfolio"      element={<Navigate to="/dashboard" replace />} />
-      <Route path="*" element={<div style={{ padding: '60px 34px', fontFamily: "'JetBrains Mono', monospace", color: 'var(--mut)' }}><h1 style={{ fontSize: 48, fontFamily: "'Syne', sans-serif", fontWeight: 800, color: 'var(--ink)', margin: '0 0 12px' }}>404</h1><p style={{ fontSize: 12 }}>Page not found.</p></div>} />
+      <Route path="*" element={<div style={{ padding: '60px 34px', fontFamily: "'JetBrains Mono', monospace", color: 'var(--mut)' }}><h1 style={{ fontSize: 48, fontFamily: "'Be Vietnam Pro', sans-serif", fontWeight: 800, color: 'var(--ink)', margin: '0 0 12px' }}>404</h1><p style={{ fontSize: 12 }}>Page not found.</p></div>} />
     </Route>
   </Routes>;
 }

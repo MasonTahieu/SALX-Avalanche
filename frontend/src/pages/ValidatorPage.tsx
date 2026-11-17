@@ -11,7 +11,7 @@ import { LazyDocumentViewer, openInPlace, toViewerDocuments } from '../component
 import { useWallet } from '../contexts/WalletContext';
 
 const MONO = "'JetBrains Mono', monospace";
-const SYNE = "'Syne', sans-serif";
+const SYNE = "'Be Vietnam Pro', sans-serif";
 
 // This page is lazy-loaded and imports ethers itself, so it can build the
 // provider synchronously.

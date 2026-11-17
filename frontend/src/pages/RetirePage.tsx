@@ -10,7 +10,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { env } from '../config/env';
 
 const MONO = "'JetBrains Mono', monospace";
-const SYNE = "'Syne', sans-serif";
+const SYNE = "'Be Vietnam Pro', sans-serif";
 
 /* ── Certificate preview card (right panel, idle state) ── */
 function CertPreview({
