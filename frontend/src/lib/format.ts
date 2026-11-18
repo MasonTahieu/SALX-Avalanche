@@ -1,3 +1,5 @@
+import { formatEther } from 'ethers';
+
 const currentLocale = () => typeof document !== 'undefined' && document.documentElement.lang === 'en' ? 'en-US' : 'vi-VN';
 export const shortAddress=(address?:string|null,left=6,right=4)=>!address?'—':`${address.slice(0,left)}…${address.slice(-right)}`;
 export const formatNumber=(value:number|string|null|undefined,digits=0,locale?:string)=>new Intl.NumberFormat(locale||currentLocale(),{maximumFractionDigits:digits}).format(Number(value||0));
@@ -17,7 +19,7 @@ export const USD_VND_RATE = 25400; // 1 USD ~ 25,400 VNĐ
 export function formatAvaxFiatHint(weiValue: string | bigint | number | null | undefined): string {
   if (weiValue === null || weiValue === undefined || weiValue === "") return "";
   try {
-    const avax = Number(ethers.formatEther(BigInt(weiValue)));
+    const avax = Number(formatEther(BigInt(weiValue)));
     if (!Number.isFinite(avax) || avax <= 0) return "";
     return formatAvaxAmountFiatHint(avax);
   } catch {
