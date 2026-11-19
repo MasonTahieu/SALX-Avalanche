@@ -2,23 +2,30 @@
  * esgAuditPdf.ts
  *
  * Renders and prints an ESG Audit PDF-ready report for a SALX certificate.
- * Uses window.print() on a dedicated hidden iframe.
+ * Uses window.print() on a dedicated hidden iframe so the rest of the page
+ * is not affected. The template is a clean, white, enterprise-grade document.
  */
 
-import type { Certificate } from '../types/domain';
+import type { Certificate, Project } from '../types/domain';
 import { env } from '../config/env';
 import { formatCO2, formatDate, shortAddress } from './format';
 import { verifyPageUrl } from './certificateShare';
+import { AVAX_TO_USDC, AVAX_TO_VND } from './currency';
 
-// Reference exchange rates (Giai đoạn 1)
-export const AVAX_TO_USDC = 25;      // 1 AVAX ≈ $25 USDC
-export const AVAX_TO_VND  = 635_000; // 1 AVAX ≈ 635,000 VNĐ
+export { AVAX_TO_USDC, AVAX_TO_VND };
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function kgToMetricTonnes(kg: number): string {
+  // Always show at least 4 decimal places so "10 kg" → "0.0100 metric tonnes"
   return (kg / 1000).toFixed(4);
 }
 
+/** Minimal QR SVG (path-only, no library dependency at render time). */
 function qrPlaceholderSvg(url: string): string {
+  // We generate a data-uri for the verify URL as a simple reference text block
+  // since qrcode-generator may not be available in the print context.
+  // A real QR code is shown via the main page; here we render the URL as text.
   return `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="120" height="120" style="border:2px solid #ccc;border-radius:6px;">
       <rect width="200" height="200" fill="#f9fafb"/>
@@ -37,7 +44,15 @@ function escHtml(s: string | number | undefined | null): string {
     .replace(/"/g, '&quot;');
 }
 
-export function exportEsgAuditPdf(cert: Certificate): void {
+// ─── Main export ─────────────────────────────────────────────────────────────
+
+/**
+ * Opens a print dialog for a fully-rendered ESG Audit certificate.
+ * The user can choose "Save as PDF" in the print dialog.
+ *
+ * @param cert  The Certificate object from SALX backend / blockchain.
+ */
+export function exportEsgAuditPdf(cert: Certificate, project?: Project): void {
   const tokenId   = cert.certificateTokenId;
   const owner     = cert.ownerAddress;
   const co2Kg     = Number(cert.retiredCO2Kg ?? 0);
@@ -50,9 +65,13 @@ export function exportEsgAuditPdf(cert: Certificate): void {
     : `${env.blockExplorerUrl}`;
   const explorerAddrUrl = `${env.blockExplorerUrl}/address/${owner}`;
 
-  const sources = cert.sources ?? (cert.projectName
-    ? [{ projectName: cert.projectName, projectId: cert.projectId, retiredTokenAmount: cert.retiredTokenAmount, retiredCO2Kg: co2Kg }]
-    : []);
+  // Build sources table rows
+  const pName = cert.projectName || project?.projectName;
+  const sources = (cert.sources && cert.sources.length > 0)
+    ? cert.sources
+    : (pName
+      ? [{ projectName: pName, projectId: cert.projectId ?? project?.onChainProjectId, retiredTokenAmount: cert.retiredTokenAmount, retiredCO2Kg: co2Kg }]
+      : []);
 
   const sourceRows = sources.length > 0
     ? sources.map((s, i) => `
@@ -81,6 +100,8 @@ export function exportEsgAuditPdf(cert: Certificate): void {
       background: #ffffff;
       line-height: 1.5;
     }
+
+    /* ── Header ── */
     .hdr {
       display: flex;
       align-items: center;
@@ -103,6 +124,7 @@ export function exportEsgAuditPdf(cert: Certificate): void {
     .hdr-doc-title { font-size: 15px; font-weight: 700; color: #111827; }
     .hdr-doc-id    { font-size: 11px; color: #6b7280; font-family: monospace; margin-top: 2px; }
 
+    /* ── Validity banner ── */
     .banner {
       background: #f0fdf4;
       border: 1.5px solid #86efac;
@@ -122,6 +144,7 @@ export function exportEsgAuditPdf(cert: Certificate): void {
     .banner-text strong { font-size: 15px; font-weight: 700; color: #15803d; }
     .banner-text span   { font-size: 12px; color: #4b7a57; display: block; margin-top: 2px; }
 
+    /* ── Two-column summary ── */
     .summary {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -145,6 +168,7 @@ export function exportEsgAuditPdf(cert: Certificate): void {
     .card-value.green { color: #16a34a; font-size: 20px; }
     .card-sub { font-size: 11px; color: #6b7280; margin-top: 3px; }
 
+    /* ── Blockchain detail ── */
     .detail-block {
       border: 1px solid #e5e7eb;
       border-radius: 10px;
@@ -171,6 +195,7 @@ export function exportEsgAuditPdf(cert: Certificate): void {
     .detail-value { color: #111827; font-family: monospace; font-size: 12px; word-break: break-all; text-align: right; max-width: 60%; }
     .detail-value a { color: #16a34a; text-decoration: none; }
 
+    /* ── Sources table ── */
     .table-block { margin-bottom: 24px; }
     .table-block h2 {
       font-size: 10px;
@@ -194,6 +219,7 @@ export function exportEsgAuditPdf(cert: Certificate): void {
     }
     thead th:last-child, thead th:nth-child(3) { text-align: right; }
 
+    /* ── QR + footer row ── */
     .bottom-row {
       display: flex;
       align-items: flex-start;
@@ -213,6 +239,7 @@ export function exportEsgAuditPdf(cert: Certificate): void {
     }
     .disclaimer strong { color: #6b7280; }
 
+    /* ── Footer ── */
     .footer {
       border-top: 1px solid #e5e7eb;
       padding-top: 10px;
@@ -224,6 +251,8 @@ export function exportEsgAuditPdf(cert: Certificate): void {
   </style>
 </head>
 <body>
+
+  <!-- HEADER -->
   <div class="hdr">
     <div class="hdr-brand">
       <div class="hdr-logo">S</div>
@@ -238,6 +267,7 @@ export function exportEsgAuditPdf(cert: Certificate): void {
     </div>
   </div>
 
+  <!-- VALIDITY BANNER -->
   <div class="banner">
     <div class="banner-icon">✓</div>
     <div class="banner-text">
@@ -246,6 +276,7 @@ export function exportEsgAuditPdf(cert: Certificate): void {
     </div>
   </div>
 
+  <!-- SUMMARY CARDS -->
   <div class="summary">
     <div class="card">
       <div class="card-label">CO₂ Offset (Metric Tonnes)</div>
@@ -268,6 +299,7 @@ export function exportEsgAuditPdf(cert: Certificate): void {
     </div>
   </div>
 
+  <!-- ON-CHAIN DETAIL -->
   <div class="detail-block">
     <h2>Blockchain Record (Avalanche Fuji C-Chain)</h2>
     <div class="detail-row">
@@ -297,6 +329,7 @@ export function exportEsgAuditPdf(cert: Certificate): void {
     </div>
   </div>
 
+  <!-- PROJECT CONTRIBUTION TABLE -->
   <div class="table-block">
     <h2>Project Contribution Breakdown</h2>
     <table>
@@ -314,6 +347,7 @@ export function exportEsgAuditPdf(cert: Certificate): void {
     </table>
   </div>
 
+  <!-- QR + DISCLAIMER -->
   <div class="bottom-row">
     <div class="qr-block">
       ${qrPlaceholderSvg(pageUrl)}
@@ -332,24 +366,30 @@ export function exportEsgAuditPdf(cert: Certificate): void {
     </div>
   </div>
 
+  <!-- FOOTER -->
   <div class="footer">
     <span>SALX Carbon Retirement Platform · Powered by Avalanche</span>
     <span>salx.vercel.app · ${escHtml(env.blockExplorerUrl)}</span>
   </div>
+
 </body>
 </html>`;
 
+  // ── Open in a hidden iframe so only the certificate is printed ──────────────
   const iframe = document.createElement('iframe');
-  iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:0;height:0;border:none;';
+  iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;opacity:0;pointer-events:none;';
   document.body.appendChild(iframe);
 
-  const iframeDoc = iframe.contentDocument ?? iframe.contentWindow?.document;
+  const iframeDoc = iframe.contentWindow?.document || iframe.contentDocument;
   if (!iframeDoc) {
+    // Fallback: open in a new tab
     const tab = window.open('', '_blank');
-    tab?.document.write(html);
-    tab?.document.close();
-    tab?.focus();
-    setTimeout(() => tab?.print(), 400);
+    if (tab) {
+      tab.document.write(html);
+      tab.document.close();
+      tab.focus();
+      setTimeout(() => tab.print(), 400);
+    }
     return;
   }
 
@@ -357,11 +397,22 @@ export function exportEsgAuditPdf(cert: Certificate): void {
   iframeDoc.write(html);
   iframeDoc.close();
 
-  iframe.onload = () => {
-    setTimeout(() => {
+  // Give the iframe time to load fonts / layout, then print and clean up.
+  // We trigger print directly after a brief timeout rather than relying solely on onload.
+  const triggerPrint = () => {
+    try {
       iframe.contentWindow?.focus();
       iframe.contentWindow?.print();
-      setTimeout(() => document.body.removeChild(iframe), 2000);
-    }, 300);
+    } catch {
+      window.print();
+    } finally {
+      setTimeout(() => {
+        if (iframe.parentNode) {
+          document.body.removeChild(iframe);
+        }
+      }, 3000);
+    }
   };
+
+  setTimeout(triggerPrint, 350);
 }

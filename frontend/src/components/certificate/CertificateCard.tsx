@@ -4,6 +4,7 @@ import type { Certificate, Project } from '../../types/domain';
 import { formatCO2, formatDate, shortAddress } from '../../lib/format';
 import { env } from '../../config/env';
 import { certificateImageUrl } from '../../lib/certificateImage';
+import { exportEsgAuditPdf } from '../../lib/esgAuditPdf';
 import { CertificateLightbox } from './CertificateLightbox';
 
 const BODY = 'var(--font-body)';
@@ -121,12 +122,48 @@ export function CertificateCard({ certificate, project, eager = false, preparing
       </div>
 
       <div style={{ flex: '1 1 260px', minWidth: 0 }}>
-        {/* ── Actions: one primary download, secondary links beneath ── */}
+        {/* ── Actions: primary downloads, secondary links beneath ── */}
         <div className="cert-card__actions">
           {downloadUrl && (
             <a href={downloadUrl} download style={{ ...button, display: 'block', textAlign: 'center', fontWeight: 600, fontSize: 13, padding: '10px 14px', color: 'var(--bg)', background: 'var(--g)', border: '1px solid var(--g)' }}>
               Download certificate (PNG)
             </a>
+          )}
+          {tokenId > 0 && !preparing && (
+            <button
+              type="button"
+              onClick={() => exportEsgAuditPdf(certificate, project)}
+              style={{
+                ...button,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                width: '100%',
+                marginTop: 8,
+                textAlign: 'center',
+                fontWeight: 600,
+                fontSize: 13,
+                padding: '10px 14px',
+                color: 'var(--g-text)',
+                background: 'rgba(45,201,34,.08)',
+                border: '1px solid rgba(45,201,34,.45)',
+                borderRadius: 6,
+                cursor: 'pointer',
+                transition: 'background .15s, border-color .15s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(45,201,34,.18)';
+                e.currentTarget.style.borderColor = 'var(--g)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(45,201,34,.08)';
+                e.currentTarget.style.borderColor = 'rgba(45,201,34,.45)';
+              }}
+              title="Xuất bản in chứng nhận chuẩn kiểm toán ESG (A4 PDF)"
+            >
+              <span aria-hidden="true">📄</span> Export ESG Audit PDF
+            </button>
           )}
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '4px 18px', padding: '10px 0 2px' }}>
             {certificate.explorerURL && (
@@ -164,6 +201,7 @@ export function CertificateCard({ certificate, project, eager = false, preparing
           downloadUrl={downloadUrl}
           title={`SBT #${tokenId} · ${certificate.retiredCO2Kg.toLocaleString('en-US')} kg CO₂e`}
           alt={imageAlt}
+          cert={certificate}
         />
       )}
     </div>

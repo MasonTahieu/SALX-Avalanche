@@ -5,6 +5,7 @@ import type { Listing, Project } from '../../types/domain';
 import { env } from '../../config/env';
 import { useWallet } from '../../contexts/WalletContext';
 import { formatCO2 } from '../../lib/format';
+import { getCurrencyEstimates } from '../../lib/currency';
 import { certificateFromReceipt } from '../../lib/mintedCertificate';
 import { projectDisplay } from '../../lib/projectMeta';
 import { TEST_AVAX_FAUCET_URL } from '../../lib/walletFunding';
@@ -235,13 +236,36 @@ export function CheckoutDialog({ listing, project, amount, onClose, onPurchased 
               <div className="checkout__row"><dt>Climate impact</dt><dd>{formatCO2(kg)}</dd></div>
               <div className="checkout__row">
                 <dt>Price</dt>
-                <dd>{amount} × {formatNative(unitPrice)} = {formatNative(priceTotal)}</dd>
+                <dd>
+                  <span>{amount} × {formatNative(unitPrice)} = {formatNative(priceTotal)}</span>
+                  <span style={{ display: 'block', fontSize: 11, color: 'var(--mut)', marginTop: 2 }}>
+                    ≈ {getCurrencyEstimates(priceTotal).label}
+                  </span>
+                </dd>
               </div>
               {retireNow && (
-                <div className="checkout__row"><dt>Certificate fee</dt><dd>{fee != null ? formatNative(fee) : '…'}</dd></div>
+                <div className="checkout__row">
+                  <dt>Certificate fee</dt>
+                  <dd>
+                    <span>{fee != null ? formatNative(fee) : '…'}</span>
+                    {fee != null && fee > 0 && (
+                      <span style={{ display: 'block', fontSize: 11, color: 'var(--mut)', marginTop: 2 }}>
+                        ≈ {getCurrencyEstimates(fee).label}
+                      </span>
+                    )}
+                  </dd>
+                </div>
               )}
               <div className="checkout__row checkout__row--total">
-                <dt>Total</dt><dd>{total != null ? formatNative(total) : '…'}</dd>
+                <dt>Total</dt>
+                <dd>
+                  <span>{total != null ? formatNative(total) : '…'}</span>
+                  {total != null && (
+                    <span style={{ display: 'block', fontSize: 11, color: 'var(--g-text)', fontWeight: 400, marginTop: 2 }}>
+                      ≈ {getCurrencyEstimates(total).label}
+                    </span>
+                  )}
+                </dd>
               </div>
             </dl>
             <p className="checkout__fine">Plus a small network fee.</p>

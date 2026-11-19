@@ -24,6 +24,7 @@ import { projectDisplay } from '../lib/projectMeta';
 import { formatNumber } from '../lib/format';
 import { FootprintCalculator } from '../components/home/FootprintCalculator';
 import { certBadge } from '../components/marketplace/certBadge';
+import { getCurrencyEstimates } from '../lib/currency';
 import { ProjectCover } from '../components/project/ProjectCover';
 import { CardSwap, Card, type CardSwapHandle } from '../components/ui/CardSwap';
 import { EmptyState, ErrorState, LoadingSkeleton } from '../components/ui/StateViews';
@@ -128,6 +129,7 @@ function buildEditions(listings: Listing[], projects: Project[]): EditionCard[] 
         title: project.projectName || `SAL Project #${listing.projectId}`,
         meta: [`ID: ${listing.projectId}`, details.location].filter(Boolean).join(' · '),
         price: `${listing.pricePerUnitETH} ${env.nativeSymbol}/SAL`,
+        estimate: getCurrencyEstimates(listing.pricePerUnitETH).label,
         remainingAmount: listing.remainingAmount,
         badge: badge.label,
         badgeBg: badge.bg,
@@ -357,7 +359,10 @@ export function HomePage() {
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
                             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--mut)' }}>{ed.meta}</span>
-                            <strong style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--g-text)' }}>{ed.price}</strong>
+                            <div style={{ textAlign: 'right' }}>
+                              <strong style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--g-text)' }}>{ed.price}</strong>
+                              <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--mut)' }}>≈ {ed.estimate}</span>
+                            </div>
                           </div>
                         </div>
                       </div>

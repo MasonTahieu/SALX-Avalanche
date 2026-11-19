@@ -4,6 +4,7 @@ import { ipfsToHttp, projectDisplay } from '../../lib/projectMeta';
 import { env } from '../../config/env';
 import { product } from '../../config/product';
 import { formatCO2 } from '../../lib/format';
+import { getCurrencyEstimates } from '../../lib/currency';
 import { certBadge } from './certBadge';
 import { ProjectCover } from '../project/ProjectCover';
 import { LazyDocumentViewer, openInPlace, toViewerDocuments } from '../documents/LazyDocumentViewer';
@@ -40,6 +41,8 @@ export function MarketDcCard({ listing, project, initialQuantity = 1, onCheckout
   const disabled = isBlacklisted;
   const canChooseQty = listing.remainingAmount > 1;
   const totalEth = (parseFloat(listing.pricePerUnitETH) * amount).toPrecision(4);
+  const unitEstimate = getCurrencyEstimates(listing.pricePerUnitETH);
+  const totalEstimate = getCurrencyEstimates(totalEth);
 
   const mrvDocs = toViewerDocuments((project?.projectMetadata as any)?.properties?.documents);
   // A click previews the MRV documents in place; the href (first document on
@@ -84,6 +87,9 @@ export function MarketDcCard({ listing, project, initialQuantity = 1, onCheckout
               <strong style={{ display: 'block', fontFamily: MONO, fontSize: 13, lineHeight: 1.3, fontWeight: 500, color: 'var(--g-text)', overflowWrap: 'anywhere' }}>
                 {listing.pricePerUnitETH} {env.nativeSymbol}/SAL
               </strong>
+              <span style={{ display: 'block', fontFamily: MONO, fontSize: 10, color: 'var(--mut)', marginTop: 2 }} title="Quy đổi ước tính (1 AVAX ≈ 25 USDC ≈ 635,000 VNĐ)">
+                ≈ {unitEstimate.label}
+              </span>
             </div>
             {mrvHref && (
               <a
@@ -137,9 +143,14 @@ export function MarketDcCard({ listing, project, initialQuantity = 1, onCheckout
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, marginTop: 8 }}>
             <span style={{ fontFamily: MONO, fontSize: 10, color: 'var(--mut)', letterSpacing: '.1em', textTransform: 'uppercase' }}>TOTAL</span>
-            <span style={{ fontFamily: MONO, fontSize: 12, color: 'var(--g-text)', whiteSpace: 'nowrap' }}>
-              {totalEth} {env.nativeSymbol}
-            </span>
+            <div style={{ textAlign: 'right' }}>
+              <span style={{ fontFamily: MONO, fontSize: 12, color: 'var(--g-text)', whiteSpace: 'nowrap' }}>
+                {totalEth} {env.nativeSymbol}
+              </span>
+              <span style={{ display: 'block', fontFamily: MONO, fontSize: 10, color: 'var(--mut)', marginTop: 1 }} title="Quy đổi ước tính (1 AVAX ≈ 25 USDC ≈ 635,000 VNĐ)">
+                ≈ {totalEstimate.label}
+              </span>
+            </div>
           </div>
 
           <button
