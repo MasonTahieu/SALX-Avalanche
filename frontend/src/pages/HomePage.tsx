@@ -86,6 +86,7 @@ interface EditionCard {
   title: string;
   meta: string;
   price: string;
+  estimate: string;
   remainingAmount: number;
   badge: string;
   badgeBg: string;
