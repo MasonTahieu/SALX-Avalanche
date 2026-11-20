@@ -1,253 +1,233 @@
-# SALX: Sàn tín chỉ carbon minh bạch trên Avalanche
+# SALX · Carbon Credit Marketplace trên Avalanche
 
-> Phiên bản Avalanche của SALX, tham gia **Team1 Vietnam UniHack 2026**. Mã nguồn gốc chạy trên Ethereum Sepolia được giữ nguyên tại [MasonTahieu/SALX](https://github.com/MasonTahieu/SALX).
+**SALX là dApp trên Avalanche Fuji C-Chain để nộp hồ sơ MRV, thẩm định dự án, giao dịch SAL và retire tín chỉ để nhận chứng nhận Soulbound.**
 
-SALX (tên nội bộ: CarboX) là một marketplace tín chỉ carbon chạy on-chain. Dự án giảm phát thải (rừng, rừng ngập mặn, điện mặt trời, điện gió...) được cộng đồng validator thẩm định rồi token hoá thành **SAL**. SAL có thể mua bán tự do trên sàn, và khi người dùng "retire" (sử dụng) tín chỉ để bù đắp phát thải, hệ thống cấp một **chứng chỉ xanh Soulbound** không thể chuyển nhượng làm bằng chứng vĩnh viễn.
+[![Frontend build: passing](https://img.shields.io/badge/frontend%20build-passing-brightgreen)](https://vercel.com/salx/salx-avalanche/Bij3n3FRXXNzzT4FN2YbtBBShiVM)
+[![Solidity license: MIT SPDX](https://img.shields.io/badge/Solidity%20SPDX-MIT-blue)](#giấy-phép-license)
+[![Frontend version: 0.1.0](https://img.shields.io/badge/frontend-v0.1.0-blue)](frontend/package.json)
+[![Network: Avalanche Fuji](https://img.shields.io/badge/Avalanche-Fuji%2043113-E84142)](#triển-khai-deployment)
 
-> **1 SAL = 10 kg CO2e**
+**Giai đoạn hiện tại · Testnet công khai** · Team1 Vietnam UniHack 2026
 
-**🌐 Website demo:** [salx-avalanche.vercel.app](https://salx-avalanche.vercel.app) (chạy trên Avalanche Fuji testnet, kết nối ví Core hoặc MetaMask để giao dịch)
+[Website](https://salx-avalanche.vercel.app/) · [Marketplace](https://salx-avalanche.vercel.app/marketplace) · [Xác minh SBT #2](https://salx-avalanche.vercel.app/verify/2) · [Bằng chứng on-chain](https://salx-avalanche.vercel.app/proof)
 
-## Vấn đề và giải pháp
+Badge build trỏ tới deployment frontend đã xác nhận trên Vercel ở `ed96d3b`. Phiên bản `0.1.0` lấy từ manifest frontend.
 
-| Vấn đề của thị trường carbon truyền thống | Cách SALX giải quyết |
-|---|---|
-| Quy trình thẩm định khép kín, khó kiểm chứng | Validator bỏ phiếu on-chain. Danh sách validator và quorum được chốt ngay lúc dự án nộp hồ sơ nên không thể thao túng về sau |
-| Một tín chỉ có thể bị bán hoặc tính hai lần (double counting) | Retire sẽ **đốt** SAL. Chứng chỉ là token Soulbound, không bán lại được |
-| Hồ sơ MRV khó truy xuất | Ảnh và tài liệu MRV được lưu trên IPFS. Metadata gắn với dự án on-chain |
-| Người mua nhỏ lẻ khó tiếp cận | Mua lẻ từng SAL (10 kg CO2e), gộp tối đa 5 dự án vào một chứng chỉ |
+## Tổng quan (Overview)
 
-## Luồng nghiệp vụ chính
+SALX phục vụ chủ dự án cần công khai hồ sơ giảm phát thải, validator cần ghi nhận kết quả thẩm định và cá nhân hoặc tổ chức cần mua lượng nhỏ để thử luồng bù trừ. Hồ sơ MRV (đo lường, báo cáo và thẩm tra) được tham chiếu bằng URI IPFS. Hợp đồng ghi phiếu thẩm định, lượng SAL phát hành và giao dịch retire để người khác đối chiếu.
 
-```
-Chủ dự án ──nộp hồ sơ + đặt cọc──▶ Validator bỏ phiếu ──đạt quorum──▶ Admin duyệt & mint SAL
-                                                                              │
-Người mua ◀──────────── mua SAL trên marketplace ◀──── chủ dự án niêm yết ◀──┘
-    │
-    └──retire SAL (đốt token)──▶ nhận Green Certificate (Soulbound NFT)
-```
+**1 SAL đại diện cho 10 kg CO₂e theo quy ước của giao thức.** Mỗi dự án có một token ID ERC-1155. Khi retire, hợp đồng đốt số SAL đã dùng và cấp một chứng nhận Soulbound có thể kiểm tra công khai. Cơ chế đốt ngăn các đơn vị SAL đó được dùng lại trong SALX. Hiện dự án chưa tích hợp registry tín chỉ carbon chính thức và bản Fuji chỉ dùng AVAX testnet.
 
-1. **Nộp dự án**: chủ dự án điền thông tin (lượng CO2 đề xuất, loại dự án, địa điểm, phương pháp luận, ngày giám sát) và tải tài liệu MRV lên IPFS. Khi gửi giao dịch `submitProject`, chủ dự án đặt cọc phí tokenization.
-2. **Thẩm định**: validator gọi `voteOnProject`. Quorum = (số validator đủ điều kiện / 2) + 1, trong đó chủ dự án không được tự bỏ phiếu cho mình.
-3. **Duyệt & mint**: khi đạt quorum, admin gọi `approveAndMintSAL` với lượng CO2 được duyệt. Nếu lượng được duyệt thấp hơn lượng đề xuất, phần phí thừa được hoàn lại. Chủ dự án có thể huỷ hồ sơ đang chờ để nhận lại toàn bộ cọc.
-4. **Giao dịch**: chủ dự án niêm yết (`createListing`). SAL được giữ trong escrow của contract. Người mua có thể mua một phần hoặc toàn bộ (`buySAL`). Sàn thu phí 2%, người bán rút tiền qua `withdrawProceeds`.
-5. **Retire**: người dùng chọn 1–5 dự án nguồn. Backend tạo metadata và ký uỷ quyền EIP-712 (có `nonce` và `deadline`). Contract kiểm tra chữ ký, đốt SAL và mint **một** chứng chỉ SBT duy nhất.
+## Tính năng chính (Features)
 
-## Kiến trúc hệ thống (Architecture)
+| Tính năng | Luồng hiện tại |
+| --- | --- |
+| Nộp hồ sơ MRV | Chủ dự án tải hồ sơ lên IPFS, gửi URI qua `submitProject` và đặt cọc phí tokenization. Hồ sơ trong trạng thái chờ có thể hủy để ghi có tiền cọc. |
+| Thẩm định và phát hành | Tại thời điểm nộp, hợp đồng chốt danh sách validator đủ điều kiện, loại chủ dự án và tính quorum là quá bán. Validator bỏ phiếu một lần. Owner gọi `approveAndMintSAL` khi đạt quorum. Lượng duyệt phải là bội số của 10 kg và trong giới hạn đã đề xuất. |
+| Marketplace | Người bán đưa SAL vào escrow qua `createListing`. Người mua có thể mua một phần niêm yết. Phí sàn mặc định 2% và có thể điều chỉnh on-chain. Người bán rút tiền qua `withdrawProceeds`. |
+| Ước tính lượng phát thải và giá | Chọn kịch bản trên trang chủ để nhận gợi ý số SAL. Giá thanh toán là AVAX. Phần USDC/VNĐ là quy đổi tham chiếu cố định được định nghĩa ở [currency.ts](frontend/src/lib/currency.ts). |
+| Mua, retire và nhận SBT | Checkout hỗ trợ mua riêng hoặc mua rồi retire trong cùng giao diện. Ví xác nhận giao dịch mua, cấp quyền ERC-1155 nếu cần, rồi xác nhận retire. Luồng `/retire` cho phép gộp SAL từ 1–5 dự án vào một SBT. |
+| Xác minh và chia sẻ | Trang `/verify/:tokenId` đọc trực tiếp SBT trên Fuji, đối chiếu bản ghi API khi có, cung cấp QR, liên kết Snowtrace, tải ảnh và nút **Export ESG Audit PDF** qua hộp thoại in của trình duyệt. |
 
-SALX gồm ba lớp: **smart contract giữ dữ liệu gốc**, **backend phục vụ truy vấn và chuẩn bị dữ liệu**, **frontend cùng ví của người dùng thực hiện giao dịch**. Nếu backend ngừng hoạt động, SAL và chứng chỉ vẫn nằm nguyên on-chain. Chỉ phần truy vấn và các thao tác cần backend bị gián đoạn.
-
-### Tổng quan
+## Kiến trúc (Architecture)
 
 ```mermaid
-flowchart TB
-    FE["Frontend<br/>React 19, Vite"]
-    Wallet["Ví<br/>Core, MetaMask, Coin98"]
-    Backend["Backend<br/>API, indexer, ký quản trị"]
-    Chain["Smart contracts<br/>Avalanche Fuji C-Chain"]
-    DB[("MongoDB + Redis<br/>read-model, cache")]
-    IPFS[("IPFS qua Filebase<br/>metadata, ảnh, MRV")]
+flowchart LR
+    UI["React / Vite"]
+    Wallet["Ví EVM hoặc Privy"]
+    API["Express API và metadata signer"]
+    Indexer["Indexer sự kiện"]
+    Chain["Avalanche Fuji C-Chain"]
+    IPFS[("IPFS qua Filebase hoặc Pinata")]
+    DB[("MongoDB")]
+    Cache[("Redis")]
 
-    FE -->|"yêu cầu ký"| Wallet
-    Wallet -->|"giao dịch của người dùng"| Chain
-    FE -->|"REST"| Backend
-    FE -->|"xem tài liệu"| IPFS
-    Backend -->|"giao dịch quản trị"| Chain
-    Chain -.->|"event"| Backend
-    Backend --> DB
-    Backend -->|"tải lên"| IPFS
+    UI -->|"Ký giao dịch"| Wallet
+    Wallet -->|"Gửi giao dịch"| Chain
+    UI -->|"Đọc contract và receipt"| Chain
+    UI -->|"Truy vấn REST, hồ sơ và bản nháp chứng nhận"| API
+    API -->|"Lưu metadata, ảnh, MRV"| IPFS
+    API -->|"Đọc trạng thái, gửi giao dịch quản trị"| Chain
+    Chain -->|"Log hợp đồng"| Indexer
+    Indexer -->|"Checkpoint và upsert"| DB
+    API --> DB
+    API --> Cache
 ```
 
-### Thành phần
+| Thành phần | Trách nhiệm |
+| --- | --- |
+| `SAL1155` | Token ERC-1155 theo từng dự án. Marketplace đã cấu hình kiểm soát việc mint và đốt SAL. |
+| `SALMarketplace` | Quản lý vòng đời dự án, validator, escrow, phí và retire. |
+| `GreenCertificateSBT` | ERC-721 không chuyển nhượng, lưu lượng SAL theo từng dự án nguồn và hỗ trợ thu hồi chứng nhận. |
+| Frontend | React 19, TypeScript, Vite, ethers. Giao dịch được ký bằng Core, MetaMask, Coin98 hoặc ví nhúng Privy khi cấu hình. |
+| API và metadata signer | Express phục vụ dự án, niêm yết, lịch sử và chứng nhận. Backend tạo metadata, tải lên IPFS và ký EIP-712 sau khi kiểm tra điều kiện on-chain. |
+| Indexer và lưu trữ | Indexer quét log theo từng đoạn block, chờ số xác nhận theo cấu hình và lưu checkpoint theo hợp đồng. MongoDB lưu dữ liệu truy vấn. Redis tăng tốc truy vấn lịch sử giao dịch. |
+| Dữ liệu giá | Tỷ giá quy đổi nằm trong frontend. Luồng thanh toán hiện dùng AVAX và không gọi oracle giá. |
 
-#### Smart contracts (`smart-contract/`)
+Khi retire, `SALMarketplace` kiểm tra chữ ký EIP-712, `nonce`, hạn hiệu lực và phí, rồi đốt SAL và mint SBT trong **cùng một giao dịch retire**. Frontend đọc ID chứng nhận từ receipt để hiển thị trước khi bản ghi đầy đủ sẵn sàng. API cũng có thể dựng lại bản ghi từ receipt khi indexer chưa xử lý.
 
-| Contract | Chuẩn | Vai trò |
-|---|---|---|
-| `SAL1155` | ERC-1155 | Token tín chỉ carbon. Mỗi `projectId` là một loại token. Hỗ trợ blacklist theo dự án |
-| `GreenCertificateSBT` | ERC-721 Soulbound | Chứng chỉ retire, không chuyển nhượng được. Lưu thành phần (dự án + số SAL) on-chain, có thể bị thu hồi khi phát hiện gian lận |
-| `SALMarketplace` | — | Trung tâm điều phối: nộp/bỏ phiếu/duyệt dự án, niêm yết, mua bán, retire, quản lý phí và treasury |
+## Cài đặt (Getting Started)
 
-Chỉ `SALMarketplace` được mint và đốt SAL hoặc mint chứng chỉ (`onlyMarketplace`), và địa chỉ này đã bị khoá vĩnh viễn sau khi deploy (`lockMarketplace`).
-
-Các cơ chế an toàn khác: `ReentrancyGuard`, `Pausable`, blacklist ví và dự án, chữ ký EIP-712 có `nonce` và `deadline` để chống giả mạo metadata chứng chỉ.
-
-#### Backend (`backend/`)
-
-Node.js + Express, MongoDB, Redis, IPFS qua Filebase (hoặc Pinata), ethers.js.
-
-| Module | Vị trí | Vai trò |
-|---|---|---|
-| REST API | `routes/` | `/api/projects`, `/api/listings`, `/api/certificates`, `/api/fees`, `/api/transactions`, `/api/leaderboard`, `/api/users`, `/api/upload/ipfs`, `/api/health`, `/api/admin/blockchain/*` |
-| Indexer | `services/blockchainListener.js` | Đồng bộ event của 3 contract về MongoDB |
-| Metadata dự án | `services/projectMetadataService.js` | Tạo metadata hồ sơ dự án và tải lên IPFS |
-| Metadata chứng chỉ | `services/certificateMetadataService.js`, `services/certificateArtwork.js` | Kiểm tra số dư on-chain, sinh ảnh chứng chỉ (SVG → PNG), ký EIP-712 |
-| Giao dịch quản trị | `services/blockchainService.js` | Gửi giao dịch duyệt dự án, tạm dừng, blacklist bằng ví quản trị |
-| Lưu trữ IPFS | `services/ipfsService.js` | Tải tệp lên Filebase hoặc Pinata |
-| Vận hành | `services/startupService.js`, `services/healthService.js` | Trình tự khởi động và báo cáo tình trạng hệ thống |
-
-#### Frontend (`frontend/`)
-
-React 19 + TypeScript + Vite + Tailwind CSS 4, ethers.js, hỗ trợ song ngữ và chế độ sáng/tối. Danh sách dự án và lịch sử được đọc qua REST API, còn giao dịch của người dùng được gửi thẳng tới contract qua ví (`src/services/blockchain.ts`).
-
-| Trang | Đường dẫn | Chức năng |
-|---|---|---|
-| Trang chủ | `/` | Thống kê tổng: dự án đã duyệt, lượng carbon đang lưu hành và đã retire |
-| Marketplace | `/marketplace` | Duyệt, lọc, sắp xếp và mua SAL |
-| Nộp dự án | `/submit` | Form nhiều bước, tải tài liệu MRV |
-| Retire | `/retire` | Chọn dự án nguồn, retire và nhận chứng chỉ |
-| Dashboard | `/dashboard` | Số dư SAL, niêm yết, dự án, chứng chỉ, tiền chờ rút |
-| Validator | `/validator` | Bỏ phiếu thẩm định dự án |
-| Bảng xếp hạng | `/leaderboard` | Top ví theo lượng CO2 đã retire |
-| Hoạt động | `/activity` | Lịch sử giao dịch on-chain |
-| Admin | `/admin` | Duyệt dự án, tạm dừng sàn, blacklist |
-
-### Luồng retire qua các tầng
-
-Retire là luồng đi qua nhiều tầng nhất. Backend chỉ cấp uỷ quyền cho metadata. Việc đốt SAL và mint chứng chỉ do chính giao dịch của người dùng thực hiện, và contract từ chối nếu chữ ký sai hoặc đã hết hạn.
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor U as Người dùng
-    participant FE as Frontend
-    participant API as Backend
-    participant IPFS
-    participant M as SALMarketplace
-    participant T as SAL1155
-    participant C as GreenCertificateSBT
-
-    U->>FE: Chọn 1–5 dự án và số SAL
-    FE->>API: POST /api/certificates/metadata
-    API->>M: Kiểm tra số dư và trạng thái on-chain
-    API->>IPFS: Tải ảnh và metadata chứng chỉ
-    API->>API: Ký EIP-712 bằng metadata signer
-    API-->>FE: certificateURI, deadline, chữ ký
-    FE->>U: Yêu cầu ký giao dịch trên ví
-    U->>M: retireSAL kèm phí mint chứng chỉ
-    M->>M: Kiểm tra chữ ký, hạn dùng, nonce
-    M->>T: Đốt SAL của từng dự án
-    M->>C: Mint một chứng chỉ Soulbound
-    M-->>API: Event được indexer đọc
-    API->>API: Ghi chứng chỉ vào MongoDB
-    FE->>API: GET /api/certificates/tx/txHash
-    API-->>FE: Trả chứng chỉ
-```
-
-Nếu indexer chưa kịp xử lý ở bước cuối, backend tự đọc receipt của giao dịch trên chain, ghi chứng chỉ rồi trả về. Người dùng thấy chứng chỉ ngay mà không phải chờ chu kỳ quét tiếp theo.
-
-### Dữ liệu nằm ở đâu
-
-| Nơi lưu | Nội dung | Vai trò |
-|---|---|---|
-| Smart contract | Dự án, phiếu bầu, số dư SAL, niêm yết, thành phần chứng chỉ, phí | Dữ liệu gốc |
-| IPFS | Metadata dự án, tài liệu MRV, ảnh và metadata chứng chỉ | Hồ sơ gắn với on-chain qua URI, kiểm chứng được theo CID |
-| MongoDB | `Project`, `Listing`, `Transaction`, `Certificate`, `ProjectVote`, `FeeEvent`, `User`, `SyncState` | Read-model để lọc, xếp hạng và truy vấn nhanh, kèm mốc đồng bộ của indexer |
-| Redis | Lịch sử giao dịch theo ví, hết hạn sau 5 phút | Cache. Mất Redis thì API đọc thẳng từ MongoDB |
-
-### Ai ký giao dịch
-
-| Hành động | Người ký | Hàm trên contract |
-|---|---|---|
-| Nộp hoặc huỷ dự án, niêm yết, mua, rút tiền, retire | Ví người dùng | `submitProject`, `cancelPendingProject`, `createListing`, `buySAL`, `withdrawProceeds`, `retireSAL` |
-| Bỏ phiếu thẩm định | Ví validator trên trang `/validator`. Admin cũng có thể bỏ phiếu ở `/admin`, khi đó backend ký bằng ví validator đã cấu hình | `voteOnProject` |
-| Thêm validator | Ví owner, trên trang `/admin` | `addValidator` |
-| Duyệt và mint, tạm dừng sàn, blacklist | Backend, bằng ví quản trị, sau khi kiểm tra `x-admin-key` | `approveAndMintSAL`, `pause`, `blacklistProject`, `blacklistOwner` |
-| Uỷ quyền metadata chứng chỉ | Backend, bằng ví metadata signer. Đây là chữ ký EIP-712, không phải giao dịch | Được kiểm tra trong `retireSAL` |
-
-### Độ tin cậy
-
-- **Indexer chạy tiếp được sau gián đoạn và không tạo bản ghi trùng.** Mỗi contract có mốc `lastProcessedBlock` riêng trong `SyncState`, nên sau khi khởi động lại indexer quét tiếp từ mốc đó. Event chỉ được xử lý sau số block xác nhận cấu hình (`BLOCKCHAIN_CONFIRMATIONS`, mặc định 2). Khoá `eventKey` duy nhất và các thao tác upsert giúp quét lại không tạo bản ghi trùng.
-- **Lỗi RPC không dừng API.** `getLogs` chạy theo từng đoạn block và có thử lại. Lỗi đồng bộ được ghi nhận và thử lại ở chu kỳ sau.
-- **Dịch vụ phụ lỗi không chặn server.** Cổng HTTP mở trước, MongoDB và Redis kết nối ở nền. MongoDB tự thử lại khi lỗi tạm thời. Indexer chỉ chạy sau khi MongoDB đã kết nối. Thiếu `MONGODB_URI` hoặc chuỗi sai định dạng thì server dừng để lần deploy báo lỗi.
-- **Theo dõi tình trạng.** `/api/health/live` chỉ cho biết server đang chạy, không gọi dịch vụ nào. `/api/health` kiểm tra MongoDB, Redis, RPC, liên kết giữa các contract, metadata signer và độ trễ của indexer.
-
-### Triển khai
-
-| Thành phần | Nền tảng | Ghi chú |
-|---|---|---|
-| Frontend | Vercel | Tự deploy khi push lên `main` |
-| Backend | Render (gói Free) | Tự deploy khi `backend/` thay đổi, ngủ sau 15 phút không có truy cập |
-| MongoDB | MongoDB Atlas | Read-model do indexer ghi |
-| Redis | Upstash | Chỉ dùng làm cache |
-| IPFS | Filebase | Đọc qua gateway `ipfs.filebase.io` |
-| Smart contracts | Avalanche Fuji C-Chain | Đã verify trên Snowtrace, deploy bằng Hardhat Ignition |
-
-## Trạng thái hiện tại
-
-- Mạng: **Avalanche Fuji C-Chain testnet** (chainId 43113). Phí gas và giá niêm yết tính bằng AVAX.
-- Explorer: [Snowtrace testnet](https://testnet.snowtrace.io).
-- Ví hỗ trợ: Core Wallet (ví chính thức của Avalanche), MetaMask, Coin98. Ví sẽ được tự động chuyển sang Fuji khi kết nối.
-- Contract đã deploy trên Fuji:
-
-  | Contract | Địa chỉ | Block deploy |
-  |---|---|---|
-  | `SALMarketplace` | [`0xBb1d739d98dAe76DD1E95e4A978Fd1E4b525ABa4`](https://testnet.snowtrace.io/address/0xBb1d739d98dAe76DD1E95e4A978Fd1E4b525ABa4) | 60494928 |
-  | `SAL1155` | [`0xb525976C24285B3D87033FD3A3E74deDdF6878f7`](https://testnet.snowtrace.io/address/0xb525976C24285B3D87033FD3A3E74deDdF6878f7) | 60494921 |
-  | `GreenCertificateSBT` | [`0xb6093FBE46BA1C0222F0D24D829EB7f310d314c7`](https://testnet.snowtrace.io/address/0xb6093FBE46BA1C0222F0D24D829EB7f310d314c7) | 60494919 |
-
-  Owner và metadata signer: [`0x9A19b5050DbbAabd856F1d81972a240FDc8d5bF5`](https://testnet.snowtrace.io/address/0x9A19b5050DbbAabd856F1d81972a240FDc8d5bF5). Cả hai token đã khoá địa chỉ marketplace (`lockMarketplace`).
-- Frontend đang chạy trên Vercel: https://salx-avalanche.vercel.app (marketplace: [/marketplace](https://salx-avalanche.vercel.app/marketplace)). Backend API chạy trên Render (gói Free, có thể mất khoảng 1 phút để khởi động lại sau thời gian không có truy cập).
-- Có test: Hardhat cho contract, Vitest cho các hook frontend, script kiểm thử cho backend.
-
-## Chạy dự án
-
-Yêu cầu: Node.js 22+ (Hardhat 3), Docker (cho MongoDB và Redis), ví Core hoặc MetaMask có AVAX testnet, tài khoản Filebase (gói Free, không cần thẻ).
-
-Lấy AVAX testnet miễn phí tại [faucet của UniHack](https://team1vn.xyz/faucet.html) hoặc [Core faucet](https://core.app/tools/testnet-faucet).
-
-### 1. Smart contracts
+- **Node.js 22.x từ 22.13.0** và npm. Hardhat 3.8.0, Solidity 0.8.28 và các phiên bản thư viện được quản lý trong repo. Các ví dụ dùng Bash hoặc Git Bash.
+- **Docker Engine và Docker Compose v2** nếu chạy backend cùng MongoDB và Redis bằng cấu hình có sẵn.
+- **Ví EVM và AVAX Fuji** cho các bước ghi on-chain. [Core faucet](https://core.app/tools/testnet-faucet)
 
 ```bash
-cd smart-contract
-cp .env.example .env     # điền DEPLOYER_PRIVATE_KEY (ví testnet riêng)
-npm install
-npm test                 # chạy test Hardhat
-npm run compile
-npm run deploy:fuji      # deploy 3 contract lên Avalanche Fuji
-npm run export:abis      # xuất ABI cho backend và frontend
+git clone https://github.com/MasonTahieu/SALX-Avalanche.git
+cd SALX-Avalanche
+cp frontend/.env.example frontend/.env
+cp backend/.env.example backend/.env
+cp smart-contract/.env.example smart-contract/.env
 ```
 
-Địa chỉ contract sau khi deploy nằm trong `smart-contract/ignition/deployments/chain-43113/deployed_addresses.json`.
+Điền cấu hình theo các file mẫu. Địa chỉ và block trong mục [Triển khai](#triển-khai-deployment) dùng được cho bản Fuji đã công bố. Khi dùng deployment riêng, cập nhật cả ba địa chỉ ở frontend và backend.
 
-### 2. Backend
+| File mẫu | Cấu hình cần chú ý |
+| --- | --- |
+| [Frontend](frontend/.env.example) | `VITE_API_URL`, chain ID, RPC, explorer và ba biến địa chỉ hợp đồng. `VITE_PRIVY_APP_ID` và `VITE_PRIVY_CLIENT_ID` là tùy chọn. Biến `VITE_*` có thể xuất hiện trong bundle công khai. |
+| [Backend](backend/.env.example) | `RPC_URL`, `CHAIN_ID`, ba địa chỉ và ba block triển khai, `MONGODB_URI` và `REDIS_URL`. Docker Compose đặt URI nội bộ cho MongoDB và Redis. Chọn Filebase hoặc Pinata để tải IPFS. Cấu hình `METADATA_SIGNER_PRIVATE_KEY` khớp signer on-chain cho luồng retire, và thông tin xác thực quản trị nếu thử duyệt dự án. |
+| [Smart contracts](smart-contract/.env.example) | `DEPLOYER_PRIVATE_KEY` và RPC tương ứng cho deploy. Compile và test cục bộ không cần khóa ví Fuji. |
+
+Giữ private key, thông tin xác thực IPFS và `ADMIN_SECRET_KEY` trong môi trường riêng. Với luồng ghi đầy đủ, dùng deployment Fuji riêng để kiểm soát vai trò owner, validator và metadata signer. Các lệnh bên dưới chạy từ thư mục gốc, trong hai terminal.
 
 ```bash
+# Terminal 1 · API, MongoDB replica set và Redis
 cd backend
-cp .env.example .env     # điền địa chỉ contract, block deploy, Filebase và các khoá quản trị
+docker compose up -d --build
+docker compose exec -T app npm run check
 ```
 
 ```bash
-cd backend
-docker compose up -d     # MongoDB replica set + Redis + backend (cổng 5000)
-npm run check            # kiểm tra cấu hình
-npm run test:backend
+# Terminal 2 · frontend, mặc định http://localhost:5173
+npm --prefix frontend ci
+npm --prefix frontend run dev
 ```
 
-### 3. Frontend
+## Sử dụng (Usage)
+
+- **Thử không cần ví.** Mở [SBT #2](https://salx-avalanche.vercel.app/verify/2) để xem lượng CO₂e đã retire, dự án đóng góp và giao dịch trên Fuji. Dùng **Export ESG Audit PDF** rồi chọn lưu dưới dạng PDF trong hộp thoại in.
+- **Thử giao dịch trên Fuji.** Kết nối ví có AVAX testnet, vào [Marketplace](https://salx-avalanche.vercel.app/marketplace), chọn số SAL và xác nhận từng bước trong ví. Vào `/retire` nếu đã có SAL từ một hoặc nhiều dự án.
+- **Thử luồng chủ dự án.** Nộp hồ sơ ở `/submit`, nhờ validator đủ điều kiện bỏ phiếu ở `/validator`, sau đó owner duyệt và mint. Chủ dự án có thể niêm yết SAL từ dashboard.
 
 ```bash
-cd frontend
-cp .env.example .env     # mặc định đã trỏ Fuji, chỉ cần điền VITE_API_URL và địa chỉ contract
-npm install
-npm run dev
-npm test
+# API đọc trên bản local
+curl -fsS http://localhost:5000/api/health/live
+curl -fsS 'http://localhost:5000/api/listings?active=true'
+
+# Compile Solidity từ thư mục gốc
+npm --prefix smart-contract ci
+npm --prefix smart-contract run compile
 ```
 
-Đăng nhập bằng Google hoặc email (tuỳ chọn): tạo app trên [Privy](https://dashboard.privy.io), bật hai phương thức này và điền `VITE_PRIVY_APP_ID`. Để trống thì lựa chọn này được ẩn. Ví tạo qua Privy ban đầu có 0 AVAX, người dùng cần tự nạp AVAX test để mua và retire.
+## Triển khai (Deployment)
 
-## Cấu trúc thư mục
+| Mạng | Chain ID | Hardhat network | Trạng thái SALX |
+| --- | --- | --- | --- |
+| Avalanche Fuji C-Chain | `43113` | `fuji` | Bản testnet công khai đang chạy |
+| Avalanche C-Chain | `43114` | `avalanche` | Có cấu hình mạng, chưa công bố deployment mainnet |
 
+[Thông số C-Chain trong tài liệu Avalanche](https://docs.avax.network/docs/primary-network)
+
+### Hợp đồng đã công bố trên Fuji
+
+| Contract | Địa chỉ trên Snowtrace | Block triển khai |
+| --- | --- | ---: |
+| `SAL1155` | [`0xb525976C24285B3D87033FD3A3E74deDdF6878f7`](https://testnet.snowtrace.io/address/0xb525976C24285B3D87033FD3A3E74deDdF6878f7#code) | 60494921 |
+| `SALMarketplace` | [`0xBb1d739d98dAe76DD1E95e4A978Fd1E4b525ABa4`](https://testnet.snowtrace.io/address/0xBb1d739d98dAe76DD1E95e4A978Fd1E4b525ABa4#code) | 60494928 |
+| `GreenCertificateSBT` | [`0xb6093FBE46BA1C0222F0D24D829EB7f310d314c7`](https://testnet.snowtrace.io/address/0xb6093FBE46BA1C0222F0D24D829EB7f310d314c7#code) | 60494919 |
+
+Cả ba contract đã công khai mã nguồn trên Snowtrace. Địa chỉ và hồ sơ triển khai gốc nằm trong [journal Ignition của Fuji](smart-contract/ignition/deployments/chain-43113/).
+
+### Deploy một bộ hợp đồng Fuji riêng
+
+Từ `smart-contract/`, cài dependency bằng `npm ci` và điền khóa của ví Fuji dành cho deployment. Dùng ID mới để giữ journal riêng. Nếu owner cũng nộp dự án, thêm ít nhất một validator độc lập trước khi nộp.
+
+```bash
+npm run deploy:fuji -- --deployment-id fuji-dev
+npx hardhat ignition verify fuji-dev --network fuji
 ```
-SALX/
-├── smart-contract/   Solidity contracts, test Hardhat, module deploy Ignition
-├── backend/          API Express, indexer blockchain, dịch vụ IPFS
-└── frontend/         Ứng dụng React
+
+Module Ignition deploy ba hợp đồng, gắn hai token với marketplace rồi khóa địa chỉ marketplace. Lấy địa chỉ từ `ignition/deployments/fuji-dev/deployed_addresses.json` và block từ receipt hoặc explorer. Sau khi verify, mở mục **Contract / Code** của từng địa chỉ trên Snowtrace để kiểm tra nguồn đã xuất hiện. Hardhat dùng Solidity 0.8.28, optimizer 200 runs và `viaIR`. [Module Ignition](smart-contract/ignition/modules/CarboX.ts) · [Hardhat config](smart-contract/hardhat.config.js)
+
+Nếu ABI thay đổi, chạy `npm run compile` rồi `npm run export:abis` trong `smart-contract/` để xuất vào `backend/abis/`. Đồng bộ ABI frontend ở `frontend/src/contracts/abis/` từ cùng artifact.
+
+### Mainnet và hosting
+
+Khi dự án sẵn sàng lên mainnet, cấu hình một ví triển khai riêng và rà soát quyền owner, validator và metadata signer. Module mặc định lấy ví triển khai làm signer. Để chỉ định ví khác, tạo file tham số JSON với cấu trúc `{"CarboXSALModule":{"metadataSigner":"<địa chỉ signer>"}}` và dùng tùy chọn `--parameters`.
+
+```bash
+# Từ smart-contract/, sau khi cấu hình ví mainnet và params.mainnet.json
+npx hardhat ignition deploy ignition/modules/CarboX.ts \
+  --network avalanche --deployment-id avalanche-mainnet --parameters params.mainnet.json
+npx hardhat ignition verify avalanche-mainnet --network avalanche
 ```
 
-## Hạn chế đã biết
+Cấu hình đồng nhất RPC, chain ID, địa chỉ và block triển khai cho frontend, API và indexer của môi trường mới.
 
-- Quyền admin ở backend dùng một secret chung (`x-admin-key`), cần chuyển sang xác thực bằng ví trước khi dùng thật.
-- Xoá validator, rút treasury và chỉnh phí hiện chỉ thao tác được trực tiếp trên contract, chưa có giao diện.
-- Contract không có trạng thái "Rejected": phiếu từ chối chỉ không được tính vào quorum.
-- Dự án là bản demo trên testnet, chưa kết nối với cơ quan đăng ký tín chỉ carbon chính thức.
+Frontend công khai chạy tại Vercel với thư mục gốc `frontend/` và lệnh build `npm run build`. API chạy trên Render với thư mục `backend/`, cài bằng `npm ci` và khởi động bằng `npm start`. Các dịch vụ lưu trữ dùng MongoDB, Redis và IPFS. Sau triển khai, đối chiếu lần lượt liveness, báo cáo health, Marketplace và một chứng nhận mẫu. [API liveness](https://salx-avalanche-api.onrender.com/api/health/live) · [Báo cáo health](https://salx-avalanche-api.onrender.com/api/health)
+
+## Kiểm thử (Testing)
+
+Chạy `npm ci` trong từng package trước khi kiểm thử. Các lệnh sau chạy từ thư mục gốc.
+
+| Phạm vi | Lệnh |
+| --- | --- |
+| Solidity và flow tích hợp trên chain mô phỏng Hardhat | `npm --prefix smart-contract test` |
+| Backend, gồm kiểm tra cú pháp và các bộ test API/dịch vụ | `npm --prefix backend run test:backend` |
+| Frontend, gồm formatter, hook và tương tác React | `npm --prefix frontend test` |
+| Một bộ test frontend | `npm --prefix frontend test -- src/__tests__/lib/currency.test.ts` |
+| TypeScript và build frontend | `npm --prefix frontend run build` |
+
+Trong `smart-contract/`, dùng `npx hardhat test mocha test/MarketplaceFlow.test.js` để chạy riêng luồng niêm yết và mua. Dùng `npx hardhat test --coverage` để đo coverage và tạo báo cáo HTML trong `smart-contract/coverage/html/`. Tại `ed96d3b`, 32 test hợp đồng đạt **80,03% line coverage** và **72,53% statement coverage** cho ba contract. Repo chưa cấu hình bộ fork test. Các bước kiểm thử trên Fuji được thực hiện riêng với ví testnet.
+
+Khi chạy bộ test backend trên clone mới, điền ba địa chỉ hợp đồng hợp lệ vào `backend/.env` hoặc biến môi trường. Test health cần các địa chỉ này để kiểm tra cách API báo lỗi khi thiếu RPC.
+
+## Bảo mật (Security)
+
+**Chưa công bố báo cáo audit bảo mật độc lập hoặc chương trình bug bounty.** PDF ESG là bản tóm tắt dữ liệu chứng nhận retire. Phạm vi hiện tại là thử nghiệm trên Fuji.
+
+- Hợp đồng dùng quyền owner và snapshot validator, khóa marketplace trên hai token, chữ ký EIP-712 có `nonce` và `deadline`, cùng cơ chế chống reentrancy, tạm dừng và blacklist. Owner có thể thu hồi SBT.
+- Quyền quản trị backend dựa trên `x-admin-key` và các ví dịch vụ cấu hình sẵn. Tách quyền owner, validator và metadata signer khi thiết kế môi trường vận hành thật.
+- Báo vấn đề bảo mật riêng qua địa chỉ liên hệ dự án. Gửi commit hoặc phiên bản, mạng, thành phần bị ảnh hưởng và mô tả tác động. Giữ private key, secret và thông tin riêng tư bên ngoài báo cáo. [Email dự án](mailto:hello@salx.io) · [GitHub Security](https://github.com/MasonTahieu/SALX-Avalanche/security)
+
+## Cấu trúc thư mục (Project Structure)
+
+```text
+SALX-Avalanche/
+├── frontend/
+│   ├── src/pages/             Trang chủ, Marketplace, hồ sơ, retire, proof và verify
+│   ├── src/components/        UI và hook nghiệp vụ
+│   ├── src/services/          Kết nối REST API, ví và hợp đồng
+│   ├── src/contracts/abis/    ABI dùng trên frontend
+│   └── src/__tests__/         Vitest
+├── backend/
+│   ├── routes/                Endpoint REST
+│   ├── services/              Indexer, IPFS, metadata, ảnh chứng nhận
+│   ├── Models/                Mongoose schema
+│   ├── abis/                  ABI dùng trên backend
+│   └── scripts/               Kiểm tra cấu hình, test và công cụ dữ liệu
+└── smart-contract/
+    ├── contracts/             Ba hợp đồng Solidity
+    ├── ignition/              Module và hồ sơ triển khai
+    ├── scripts/               Công cụ xuất ABI và cấu hình hợp đồng
+    └── test/                  Hardhat / Mocha
+```
+
+## Đóng góp (Contributing)
+
+1. Mở issue cho lỗi hoặc đề xuất thông thường. Nêu network, bước tái hiện, kết quả mong đợi và commit đang dùng. [GitHub Issues](https://github.com/MasonTahieu/SALX-Avalanche/issues)
+2. Tạo nhánh từ `main`, giữ PR tập trung vào một thay đổi và chạy build hoặc test cho phần bị ảnh hưởng.
+3. Dùng tiêu đề commit ngắn mô tả thay đổi. Các tiền tố `feat:`, `fix:` hoặc `docs:` là quy ước đề xuất. Trong PR, ghi rõ tác động tới dữ liệu, ABI hoặc deployment nếu có. [GitHub Pull Requests](https://github.com/MasonTahieu/SALX-Avalanche/pulls)
+
+## Giấy phép (License)
+
+Ba hợp đồng Solidity khai báo `SPDX-License-Identifier: MIT`. Manifest backend ghi `ISC` và giấy phép font được lưu riêng. Repo hiện chưa có file `LICENSE` cấp gốc. [Hợp đồng Solidity](smart-contract/contracts/) · [Manifest backend](backend/package.json) · [Giấy phép font](backend/assets/fonts/OFL.txt)
+
+## Liên hệ và tài nguyên
+
+- **Maintainer** · [MasonTahieu](https://github.com/MasonTahieu) · [hello@salx.io](mailto:hello@salx.io)
+- **Sản phẩm và bằng chứng** · [SALX trên Fuji](https://salx-avalanche.vercel.app/) · [Proof](https://salx-avalanche.vercel.app/proof) · [SBT #2](https://salx-avalanche.vercel.app/verify/2)
+- **Tài liệu và mã nguồn liên quan** · [Avalanche Builder Hub](https://docs.avax.network/) · [Hardhat Ignition](https://hardhat.org/docs/guides/deployment/using-ignition) · [Repo SALX ban đầu trên Ethereum Sepolia](https://github.com/MasonTahieu/SALX)
+
+Repo hiện chưa công bố whitepaper hoặc kênh Discord/Telegram chính thức.
