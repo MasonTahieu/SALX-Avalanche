@@ -63,6 +63,7 @@ export function exportEsgAuditPdf(cert: Certificate, project?: Project): void {
   const explorerTxUrl = txHash
     ? `${env.blockExplorerUrl}/tx/${txHash}`
     : `${env.blockExplorerUrl}`;
+  // Use full transaction hash and contract address (no shortAddress) for institutional reports
   const explorerAddrUrl = `${env.blockExplorerUrl}/address/${owner}`;
 
   // Build sources table rows
@@ -92,7 +93,15 @@ export function exportEsgAuditPdf(cert: Certificate, project?: Project): void {
   <meta charset="UTF-8"/>
   <title>ESG Audit Certificate – SBT #${tokenId}</title>
   <style>
-    @page { size: A4 portrait; margin: 20mm 18mm; }
+    @page { size: A4 portrait; margin: 10mm 10mm; }
+    @media print {
+      body { font-size: 10px; }
+      .hdr { padding-bottom: 12px; margin-bottom: 16px; }
+      .card-value { font-size: 14px; }
+      .detail-value { font-size: 10px; }
+      .table-block th, .table-block td { padding: 6px 8px; font-size: 10px; }
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Helvetica Neue', Arial, sans-serif;
@@ -308,7 +317,7 @@ export function exportEsgAuditPdf(cert: Certificate, project?: Project): void {
     </div>
     <div class="detail-row">
       <span class="detail-key">Contract (SALX Certificate SBT)</span>
-      <span class="detail-value"><a href="${escHtml(env.blockExplorerUrl)}/address/${escHtml(env.certificateAddress)}">${escHtml(shortAddress(env.certificateAddress, 8, 6))}</a></span>
+      <span class="detail-value"><a href="${escHtml(env.blockExplorerUrl)}/address/${escHtml(env.certificateAddress)}">${escHtml(env.certificateAddress)}</a></span>
     </div>
     <div class="detail-row">
       <span class="detail-key">Owner Wallet</span>
@@ -317,7 +326,8 @@ export function exportEsgAuditPdf(cert: Certificate, project?: Project): void {
     ${txHash ? `
     <div class="detail-row">
       <span class="detail-key">Retirement TxHash</span>
-      <span class="detail-value"><a href="${escHtml(explorerTxUrl)}">${escHtml(shortAddress(txHash, 10, 8))}</a></span>
+      <span class="detail-value"><a href="${escHtml(explorerTxUrl)}">${escHtml(txHash)}</a></span>
+
     </div>` : ''}
     <div class="detail-row">
       <span class="detail-key">Network</span>
